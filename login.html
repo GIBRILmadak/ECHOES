@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Connexion</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script defer src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script defer src="global-theme.js"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="supabase-client.js"></script>
+    <script defer src="auth.js"></script>
+    <style>
+        .glass-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.36); }
+        /* Forcer le texte noir sur le bouton Google malgré le thème global */
+        #btn-google { background:#ffffff !important; color:#000000 !important; border:1px solid rgba(0,0,0,0.08); }
+        #btn-google:hover { filter: brightness(0.95); }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white dark:text-dark-text dark:bg-gradient-to-br dark:from-blue-900 dark:to-black">
+    <div id="vanta-bg" class="fixed inset-0 -z-10 bg-cover bg-center"></div>
+
+    <div class="container mx-auto px-4 pt-20 pb-12">
+        <header class="flex items-center justify-between mb-10">
+            <h1 class="text-2xl font-bold">ECHOES</h1>
+            <button id="theme-toggle" class="px-3 py-1.5 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 flex items-center gap-2 text-sm">
+                <i data-feather="moon" id="theme-icon" class="w-4 h-4"></i>
+                <span id="theme-label">Thème sombre</span>
+            </button>
+        </header>
+
+        <div class="max-w-md mx-auto glass-card rounded-2xl p-5" data-aos="fade-up">
+            <div class="flex items-center gap-2 mb-4">
+                <button id="tab-signin" class="px-3 py-1.5 rounded-full bg-dark-accent text-white text-sm">Se connecter</button>
+                <button id="tab-signup" class="px-3 py-1.5 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-sm">Créer un compte</button>
+            </div>
+            <!-- Signin form -->
+            <div id="panel-signin" class="space-y-3">
+                <input id="auth-email" type="email" placeholder="Email" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" />
+                <input id="auth-password" type="password" placeholder="Mot de passe" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" />
+                <button id="btn-signin" class="w-full px-3 py-2 rounded-full bg-dark-accent text-white text-sm">Se connecter</button>
+                <div class="mt-2">
+                    <button id="btn-google" class="w-full px-3 py-2 rounded-full bg-white text-black text-sm">Continuer avec Google</button>
+                </div>
+                <div class="text-center">
+                    <button data-auth="signin" class="text-xs underline">Recevoir un lien magique par email</button>
+                </div>
+            </div>
+            <!-- Signup form -->
+            <div id="panel-signup" class="space-y-3" style="display:none;">
+                <input id="signup-email" type="email" placeholder="Email" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" />
+                <input id="signup-password" type="password" placeholder="Mot de passe" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" />
+                <input id="signup-username" type="text" placeholder="Pseudo (sera visible publiquement)" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" />
+                <div>
+                    <label class="text-xs opacity-75 block mb-1">Date de naissance (7 ans minimum)</label>
+                    <input id="signup-dob" type="date" class="w-full bg-transparent border border-dark-secondary rounded-lg p-2 text-sm" />
+                </div>
+                <button id="btn-signup" class="w-full px-3 py-2 rounded-full bg-dark-accent text-white text-sm">Créer mon compte</button>
+                <p class="text-xs opacity-75">Votre pseudo et votre date de naissance alimenteront votre profil.</p>
+            </div>
+            <p class="text-xs opacity-75 mt-4 text-center">En vous connectant, vous acceptez nos conditions d'utilisation.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 DOM chargé, initialisation...');
+            
+            if (window.AOS) AOS.init({ duration: 800, easing: 'ease-in-out', once: true });
+            const themeIcon = document.getElementById('theme-icon');
+            const themeLabel = document.getElementById('theme-label');
+            const isDark = document.documentElement.classList.contains('dark');
+            if (themeIcon) themeIcon.setAttribute('data-feather', isDark ? 'moon' : 'sun');
+            if (themeLabel) themeLabel.textContent = isDark ? 'Thème sombre' : 'Thème clair';
+            if (window.feather) feather.replace();
+
+            // Activer le bouton de thème
+            const themeBtn = document.getElementById('theme-toggle');
+            if (themeBtn) {
+                console.log('✅ Bouton thème trouvé et configuré');
+                themeBtn.addEventListener('click', () => {
+                    const next = window.toggleTheme ? window.toggleTheme() : (document.documentElement.classList.toggle('dark') ? 'dark' : 'light');
+                    if (themeIcon) themeIcon.setAttribute('data-feather', next === 'dark' ? 'moon' : 'sun');
+                    if (themeLabel) themeLabel.textContent = next === 'dark' ? 'Thème sombre' : 'Thème clair';
+                    if (window.feather) feather.replace();
+                });
+            }
+
+            // Attendre que tous les scripts soient chargés
+            console.log('⏳ Attente des scripts...');
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            const waitForScripts = () => {
+                attempts++;
+                console.log(`Tentative ${attempts}/${maxAttempts}`);
+                
+                if (window.getSupabase && window.echoesAuth) {
+                    console.log('✅ Scripts chargés, initialisation auth...');
+                    initializeAuth();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(waitForScripts, 100);
+                } else {
+                    console.error('❌ Timeout: Scripts non chargés après 5 secondes');
+                    console.log('getSupabase:', !!window.getSupabase);
+                    console.log('echoesAuth:', !!window.echoesAuth);
+                }
+            };
+            
+            const initializeAuth = async () => {
+                try {
+                    const supabase = await window.getSupabase();
+                    console.log('✅ Supabase client créé');
+                    
+                    // Brancher les boutons d'auth
+                    if (window.echoesAuth && window.echoesAuth.wireUI) { 
+                        console.log('✅ Configuration des boutons auth...');
+                        window.echoesAuth.wireUI(); 
+                    } else {
+                        console.error('❌ echoesAuth.wireUI non disponible');
+                    }
+                    
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session) { 
+                        console.log('✅ Session existante, redirection...');
+                        window.location.href = 'index.html'; 
+                        return; 
+                    }
+                    supabase.auth.onAuthStateChange((_e, s) => { if (s) window.location.href = 'index.html'; });
+                    console.log('✅ Auth configuré avec succès');
+                } catch (error) {
+                    console.error('❌ Erreur auth:', error);
+                }
+            };
+            
+            waitForScripts();
+        });
+    </script>
+    <script src="background-init.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Réseau Social</title>
+    <!-- Primary favicon (PNG) -->
+    <link rel="icon" type="image/png" href="icon.png">
+    <!-- Shortcut for older browsers -->
+    <link rel="shortcut icon" href="icon.png" type="image/png">
+    <!-- Apple touch icon for iOS -->
+    <link rel="apple-touch-icon" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            primary: '#0f172a',
+                            secondary: '#1e293b',
+                            accent: '#3b82f6',
+                            text: '#f8fafc'
+                        },
+                        light: {
+                            primary: '#ffffff',
+                            secondary: '#f9fafb',
+                            accent: '#ec4899',
+                            text: '#1e293b'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                        sm: '4px',
+                        md: '8px',
+                        lg: '12px',
+                        xl: '16px',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script defer src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script defer src="global-theme.js"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="supabase-client.js"></script>
+    <script defer src="auth.js"></script>
+    <!-- Scripts suivants absents du projet; commentés pour éviter des erreurs 404 sans impacter le design -->
+    <!-- <script defer src="notifications.js"></script> -->
+    <!-- <script defer src="user-badge-display.js"></script> -->
+    <!-- <script defer src="dynamic-interactions.js"></script> -->
+    <!-- <script defer src="dynamic-content.js"></script> -->
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .theme-transition {
+            transition: background-color 0.5s ease, color 0.3s ease;
+        }
+        .gradient-text-dark {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .gradient-text-light {
+            background: linear-gradient(90deg, #ec4899, #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black theme-transition text-white dark:text-dark-text dark:bg-gradient-to-br dark:from-blue-900 dark:to-black">
+    <div id="vanta-bg" class="fixed inset-0 -z-10 bg-cover bg-center"></div>
+    
+    <!-- Navigation -->
+    <nav class="glass-card fixed bottom-6 left-1/2 transform -translate-x-1/2 rounded-full px-4 md:px-8 py-3 flex items-center justify-center space-x-4 md:space-x-8 z-50" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
+        <a href="index.html" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="home" class="w-5 h-5"></i>
+        </a>
+        <a href="messages.html" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="mail" class="w-5 h-5"></i>
+        </a>
+        <a href="calm.html" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="book" class="w-5 h-5"></i>
+        </a>
+    </nav>
+
+    <!-- Main Content -->
+    <div id="app-root" class="container mx-auto px-4 pt-28 pb-24" style="display:none;">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold gradient-text-dark dark:gradient-text-dark">ECHOES</h1>
+                <p class="text-sm opacity-75">Votre réseau social polyvalent</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="profile.html" class="flex items-center space-x-2 glass-card rounded-full px-3 py-1.5" data-visible="auth">
+                    <img id="header-avatar" src="http://static.photos/people/200x200/42" alt="Profile" class="w-8 h-8 rounded-full">
+                    <span id="header-name">Profil</span>
+                </a>
+                <button class="px-3 py-1.5 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50" data-visible="guest" id="open-auth">Se connecter</button>
+            </div>
+        </header>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+            <div class="glass-card rounded-2xl p-4 w-full max-w-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold">Connexion / Inscription</h2>
+                    <button id="close-auth" class="p-1 rounded hover:bg-dark-secondary hover:bg-opacity-30">✕</button>
+                </div>
+                <div class="space-y-2">
+                    <input id="auth-email" type="email" placeholder="Email" class="w-full bg-transparent border border-dark-secondary rounded-lg p-2 text-sm" />
+                    <input id="auth-password" type="password" placeholder="Mot de passe" class="w-full bg-transparent border border-dark-secondary rounded-lg p-2 text-sm" />
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-3">
+                    <button id="btn-signin" class="px-3 py-2 rounded-full bg-dark-accent text-white text-sm">Se connecter</button>
+                    <button id="btn-signup" class="px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-sm">Créer un compte</button>
+                </div>
+                <div class="mt-3">
+                    <button id="btn-google" class="w-full px-3 py-2 rounded-full bg-white text-black text-sm mb-2">Continuer avec Google</button>
+                    <button id="btn-apple" class="w-full px-3 py-2 rounded-full bg-black text-white text-sm">Continuer avec Apple</button>
+                </div>
+                <div class="mt-3 text-center">
+                    <button data-auth="signin" class="text-xs underline">Recevoir un lien magique par email</button>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-sm font-semibold mb-2">Connexion par téléphone</h3>
+                    <input id="auth-phone" type="tel" placeholder="Téléphone (+33..., +237...)" class="w-full bg-transparent border border-dark-secondary rounded-lg p-2 text-sm mb-2" />
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btn-phone-send" class="px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-sm">Recevoir le code</button>
+                        <div class="flex gap-2">
+                            <input id="auth-phone-code" type="text" placeholder="Code" class="flex-1 bg-transparent border border-dark-secondary rounded-lg p-2 text-sm" />
+                            <button id="btn-phone-verify" class="px-3 py-2 rounded-full bg-dark-accent text-white text-sm">Valider</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Buttons -->
+        <div class="grid grid-cols-3 gap-2 mb-4">
+            <a href="videos.html" class="glass-card rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-dark-secondary dark:hover:bg-opacity-30 transition-all duration-200">
+                <i data-feather="video" class="w-6 h-6 mb-1 gradient-text-dark dark:gradient-text-dark"></i>
+                <h2 class="font-bold text-sm leading-tight">Vidéos</h2>
+                <p class="text-xs opacity-75 leading-tight">Explorer</p>
+            </a>
+            <a href="music.html" class="glass-card rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-dark-secondary dark:hover:bg-opacity-30 transition-all duration-200">
+                <i data-feather="music" class="w-6 h-6 mb-1 gradient-text-dark dark:gradient-text-dark"></i>
+                <h2 class="font-bold text-sm leading-tight">Musique</h2>
+                <p class="text-xs opacity-75 leading-tight">Écouter</p>
+            </a>
+            <a href="forum.html" class="glass-card rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-dark-secondary dark:hover:bg-opacity-30 transition-all duration-200">
+                <i data-feather="message-square" class="w-6 h-6 mb-1 gradient-text-dark dark:gradient-text-dark"></i>
+                <h2 class="font-bold text-sm leading-tight">Forum</h2>
+                <p class="text-xs opacity-75 leading-tight">Discuter</p>
+            </a>
+        </div>
+
+        <!-- Create Post -->
+        <div class="glass-card rounded-2xl p-4 mb-6" data-visible="auth">
+            <div class="flex items-center space-x-3 mb-4">
+                <img src="http://static.photos/people/200x200/42" alt="Profile" class="w-10 h-10 rounded-full">
+                <input id="new-post" type="text" placeholder="Quoi de neuf ?" class="flex-1 bg-transparent border-b border-dark-secondary focus:outline-none focus:border-dark-accent">
+            </div>
+            <div class="flex justify-between">
+                <div class="flex space-x-4">
+                    <button class="flex items-center space-x-1 text-sm">
+                        <i data-feather="image" class="w-4 h-4"></i>
+                        <span>Photo</span>
+                    </button>
+                    <button class="flex items-center space-x-1 text-sm">
+                        <i data-feather="video" class="w-4 h-4"></i>
+                        <span>Vidéo</span>
+                    </button>
+                    <button class="flex items-center space-x-1 text-sm">
+                        <i data-feather="mic" class="w-4 h-4"></i>
+                        <span>Audio</span>
+                    </button>
+                </div>
+                <button id="publish-post" class="bg-dark-accent text-white px-4 py-1 rounded-full text-sm">Publier</button>
+            </div>
+        </div>
+
+        <!-- Posts Feed -->
+        <!-- Constraining posts width on large screens while keeping full width on small screens -->
+        <div id="feed" class="mx-auto w-full max-w-3xl space-y-6"></div>
+    </div>
+
+    <script>
+        // Initialize AOS and Feather Icons
+        document.addEventListener('DOMContentLoaded', () => {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+            feather.replace();
+
+            // Init subscribe buttons on posts
+            document.querySelectorAll('.subscribe-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const subscribed = btn.getAttribute('data-subscribed') === 'true';
+                    btn.setAttribute('data-subscribed', String(!subscribed));
+                    const icon = btn.querySelector('i');
+                    const label = btn.querySelector('span:last-child');
+                    if (!subscribed) {
+                        icon.setAttribute('data-feather', 'user-check');
+                        label.textContent = 'Abonné';
+                        btn.classList.add('bg-dark-accent', 'text-white');
+                    } else {
+                        icon.setAttribute('data-feather', 'user-plus');
+                        label.textContent = "S'abonner";
+                        btn.classList.remove('bg-dark-accent', 'text-white');
+                    }
+                    if (window.feather) feather.replace();
+                    document.dispatchEvent(new CustomEvent('userSubscribed', { detail: { source: 'post', subscribed: !subscribed } }));
+                });
+            });
+        });
+    </script>
+    <script>
+        // Auth modal + Full dynamic feed + post publish
+        document.addEventListener('DOMContentLoaded', async () => {
+            const supabase = await window.getSupabase();
+            const app = document.getElementById('app-root');
+            // modal wiring
+            const openAuth = document.getElementById('open-auth');
+            const modal = document.getElementById('auth-modal');
+            const closeAuth = document.getElementById('close-auth');
+            if (openAuth && modal) openAuth.addEventListener('click', ()=>{ modal.classList.remove('hidden'); modal.classList.add('flex'); });
+            if (closeAuth && modal) closeAuth.addEventListener('click', ()=>{ modal.classList.add('hidden'); modal.classList.remove('flex'); });
+
+            // Require auth before showing app
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+            } else {
+                if (app) app.style.display = '';
+            }
+            supabase.auth.onAuthStateChange((_e, s) => {
+                if (s && app) app.style.display = '';
+                if (s && modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            });
+
+            const feedEl = document.getElementById('feed');
+            if (!feedEl) return;
+
+            async function renderFeed(){
+                const { data: posts, error } = await supabase
+                    .from('posts')
+                    .select('id, content, created_at, image_url, author:profiles(full_name, avatar_url)')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+                if (error) { console.warn(error); return; }
+                feedEl.innerHTML = '';
+                (posts||[]).forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-card rounded-2xl p-4';
+                    const authorName = (p.author && p.author.full_name) || 'Utilisateur';
+                    const avatar = (p.author && p.author.avatar_url) || 'http://static.photos/people/200x200/1';
+                    const img = p.image_url ? `<img src="${p.image_url}" alt="Post" class="w-full rounded-xl mb-4">` : '';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center space-x-3">
+                                <img src="${avatar}" alt="Profile" class="w-10 h-10 rounded-full">
+                                <div>
+                                    <h3 class="font-medium">${authorName}</h3>
+                                    <p class="text-xs opacity-75">${new Date(p.created_at).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <button><i data-feather="more-horizontal" class="w-5 h-5"></i></button>
+                        </div>
+                        <p class="mb-4">${(p.content || '').replace(/</g,'&lt;')}</p>
+                        ${img}
+                        <div class="flex justify-between text-sm">
+                            <div class="flex items-center space-x-2">
+                                <button class="flex items-center space-x-1"><i data-feather="heart" class="w-4 h-4"></i><span>0</span></button>
+                                <button class="flex items-center space-x-1"><i data-feather="message-square" class="w-4 h-4"></i><span>0</span></button>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="flex items-center space-x-1"><i data-feather="share-2" class="w-4 h-4"></i><span>Partager</span></button>
+                                <button class="flex items-center space-x-1 subscribe-btn px-2 py-1 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50" data-subscribed="false">
+                                    <i data-feather="user-plus" class="w-4 h-4"></i>
+                                    <span>S'abonner</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    feedEl.appendChild(card);
+                });
+                if (window.feather) feather.replace();
+            }
+
+            await renderFeed();
+
+            // Header profile info (avatar/name)
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: prof } = await supabase
+                        .from('profiles')
+                        .select('full_name, username, avatar_url')
+                        .eq('id', user.id)
+                        .single();
+                    const nameEl = document.getElementById('header-name');
+                    const avatarEl = document.getElementById('header-avatar');
+                    if (nameEl) nameEl.textContent = (prof?.full_name || prof?.username || 'Mon Profil');
+                    if (avatarEl && prof?.avatar_url) avatarEl.src = prof.avatar_url;
+                }
+            } catch(e) { /* silent */ }
+
+            // Publish post
+            const publishBtn = document.getElementById('publish-post');
+            if (publishBtn) {
+                publishBtn.addEventListener('click', async ()=>{
+                    const input = document.getElementById('new-post');
+                    const content = String(input?.value || '').trim();
+                    if (!content) { alert('Écrivez quelque chose.'); return; }
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) { alert('Connectez-vous.'); return; }
+                    // find author profile to set author_id
+                    const { data: prof } = await supabase.from('profiles').select('id').eq('id', user.id).single();
+                    const authorId = prof?.id || user.id;
+                    const { error } = await supabase.from('posts').insert({ author_id: authorId, content, image_url: null });
+                    if (error) { alert('Erreur: ' + (error.message||error)); return; }
+                    input.value = '';
+                    await renderFeed();
+                });
+            }
+        });
+    </script>
+<script src="background-init.js"></script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démonstration Notifications - ECHOES</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            primary: '#0f172a',
+                            secondary: '#1e293b',
+                            accent: '#3b82f6',
+                            text: '#f8fafc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script type="module" src="points.js"></script>
+    <script src="notifications.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .demo-section {
+            transition: all 0.3s ease;
+        }
+        .demo-section:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white">
+    
+    <!-- Navigation -->
+    <nav class="glass-card fixed bottom-6 left-1/2 transform -translate-x-1/2 rounded-full px-8 py-3 flex items-center justify-center space-x-8 z-40">
+        <a href="index.html" class="p-2 rounded-full hover:bg-dark-secondary hover:bg-opacity-30">
+            <i data-feather="home" class="w-5 h-5"></i>
+        </a>
+        <a href="badge-demo.html" class="p-2 rounded-full hover:bg-dark-secondary hover:bg-opacity-30">
+            <i data-feather="award" class="w-5 h-5"></i>
+        </a>
+        <a href="profile.html" class="p-2 rounded-full hover:bg-dark-secondary hover:bg-opacity-30">
+            <i data-feather="user" class="w-5 h-5"></i>
+        </a>
+    </nav>
+
+    <div class="container mx-auto px-4 pt-8 pb-24">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">Système de Notifications</h1>
+            <p class="text-lg opacity-75">Démonstration des notifications de badges ECHOES</p>
+        </header>
+
+        <!-- Current Status -->
+        <div class="glass-card rounded-2xl p-6 mb-8 max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-4 text-center">Statut Actuel</h2>
+            <div class="flex items-center justify-center space-x-4 mb-4">
+                <img id="current-badge-img" src="badges/new.svg" alt="Badge actuel" class="w-16 h-16">
+                <div class="text-center">
+                    <h3 id="current-badge-name" class="text-xl font-semibold">Nouveau</h3>
+                    <p id="current-badge-description" class="text-sm opacity-75">Badge d'entrée pour ceux qui découvrent ECHOES</p>
+                    <p id="current-points" class="text-lg font-bold text-blue-400 mt-2">0 points</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Sections -->
+        <div class="grid gap-6 max-w-4xl mx-auto">
+            
+            <!-- Notification Tests -->
+            <div class="demo-section glass-card rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i data-feather="bell" class="w-6 h-6 mr-2"></i>
+                    Tests de Notifications
+                </h2>
+                <p class="text-sm opacity-75 mb-4">Testez différents types de notifications de badges</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="testSpecificBadge('badges/step.svg')" class="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm">
+                        Premiers Pas
+                    </button>
+                    <button onclick="testSpecificBadge('badges/first.svg')" class="bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded-lg text-sm">
+                        Premier Impact
+                    </button>
+                    <button onclick="testSpecificBadge('badges/peace.svg')" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded-lg text-sm">
+                        Paix
+                    </button>
+                    <button onclick="testSpecificBadge('badges/fly.svg')" class="bg-pink-600 hover:bg-pink-700 px-3 py-2 rounded-lg text-sm">
+                        Envol
+                    </button>
+                    <button onclick="testSpecificBadge('badges/moon.svg')" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg text-sm">
+                        Lune
+                    </button>
+                    <button onclick="testSpecificBadge('badges/star.svg')" class="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded-lg text-sm">
+                        Étoile
+                    </button>
+                    <button onclick="testSpecificBadge('badges/echoes.svg')" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm">
+                        ECHOES
+                    </button>
+                    <button onclick="testRandomBadge()" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm">
+                        Aléatoire
+                    </button>
+                </div>
+            </div>
+
+            <!-- Simulation de Progression -->
+            <div class="demo-section glass-card rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i data-feather="trending-up" class="w-6 h-6 mr-2"></i>
+                    Simulation de Progression
+                </h2>
+                <p class="text-sm opacity-75 mb-4">Simulez une progression naturelle avec notifications automatiques</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <button onclick="simulateProgression()" class="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg">
+                        <i data-feather="play" class="w-4 h-4 inline mr-2"></i>
+                        Progression Auto
+                    </button>
+                    <button onclick="fastProgression()" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-3 rounded-lg">
+                        <i data-feather="fast-forward" class="w-4 h-4 inline mr-2"></i>
+                        Progression Rapide
+                    </button>
+                    <button onclick="resetProgress()" class="bg-gray-600 hover:bg-gray-700 px-4 py-3 rounded-lg">
+                        <i data-feather="refresh-cw" class="w-4 h-4 inline mr-2"></i>
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+
+            <!-- Queue de Notifications -->
+            <div class="demo-section glass-card rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i data-feather="layers" class="w-6 h-6 mr-2"></i>
+                    Test de Queue Multiple
+                </h2>
+                <p class="text-sm opacity-75 mb-4">Testez l'affichage de plusieurs notifications en séquence</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="testMultipleNotifications()" class="bg-purple-600 hover:bg-purple-700 px-4 py-3 rounded-lg">
+                        <i data-feather="layers" class="w-4 h-4 inline mr-2"></i>
+                        5 Notifications
+                    </button>
+                    <button onclick="testNotificationSpam()" class="bg-pink-600 hover:bg-pink-700 px-4 py-3 rounded-lg">
+                        <i data-feather="zap" class="w-4 h-4 inline mr-2"></i>
+                        Test Rapide (10)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Options de Customisation -->
+            <div class="demo-section glass-card rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i data-feather="settings" class="w-6 h-6 mr-2"></i>
+                    Options de Notification
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="soundEnabled" checked class="rounded">
+                            <span>Son des notifications</span>
+                        </label>
+                        <button onclick="toggleSound()" class="text-blue-400 hover:text-blue-300">
+                            <i data-feather="volume-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center space-x-2">
+                            <span>Durée d'affichage</span>
+                        </label>
+                        <select id="notificationDuration" class="bg-dark-secondary text-white rounded px-2 py-1">
+                            <option value="3000">3 secondes</option>
+                            <option value="5000" selected>5 secondes</option>
+                            <option value="8000">8 secondes</option>
+                            <option value="0">Permanent</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="demo-section glass-card rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i data-feather="bar-chart" class="w-6 h-6 mr-2"></i>
+                    Statistiques de Session
+                </h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl font-bold text-blue-400" id="notificationsShown">0</div>
+                        <div class="text-sm opacity-75">Notifications</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-green-400" id="badgesEarned">0</div>
+                        <div class="text-sm opacity-75">Badges Gagnés</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-yellow-400" id="pointsEarned">0</div>
+                        <div class="text-sm opacity-75">Points Totaux</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-purple-400" id="sessionTime">00:00</div>
+                        <div class="text-sm opacity-75">Temps Session</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getPoints, addPoints, getBadge } from './points.js';
+
+        let sessionStats = {
+            notificationsShown: 0,
+            badgesEarned: 0,
+            sessionStartTime: Date.now()
+        };
+
+        // Global functions for buttons
+        window.testSpecificBadge = function(badgePath) {
+            if (window.badgeNotificationSystem) {
+                const badgeInfo = window.badgeNotificationSystem.getBadgeInfo(badgePath);
+                if (badgeInfo) {
+                    window.badgeNotificationSystem.displayNotification(badgePath, Math.floor(Math.random() * 1000) + 500, badgeInfo);
+                    updateStats();
+                }
+            }
+        };
+
+        window.testRandomBadge = function() {
+            if (window.badgeNotificationSystem) {
+                window.badgeNotificationSystem.triggerTestNotification();
+                updateStats();
+            }
+        };
+
+        window.simulateProgression = function() {
+            const intervals = [200, 300, 500, 700, 1000, 1500, 2000];
+            let currentInterval = 0;
+            
+            const progressInterval = setInterval(() => {
+                addPoints(Math.floor(Math.random() * 50) + 10);
+                updateDisplay();
+                
+                currentInterval++;
+                if (currentInterval >= intervals.length) {
+                    clearInterval(progressInterval);
+                }
+            }, intervals[Math.min(currentInterval, intervals.length - 1)]);
+        };
+
+        window.fastProgression = function() {
+            const badges = ['badges/step.svg', 'badges/first.svg', 'badges/peace.svg', 'badges/fly.svg'];
+            let i = 0;
+            
+            const fastInterval = setInterval(() => {
+                addPoints(Math.floor(Math.random() * 200) + 100);
+                updateDisplay();
+                i++;
+                
+                if (i >= 8) {
+                    clearInterval(fastInterval);
+                }
+            }, 800);
+        };
+
+        window.resetProgress = function() {
+            location.reload();
+        };
+
+        window.testMultipleNotifications = function() {
+            const badges = ['badges/step.svg', 'badges/first.svg', 'badges/peace.svg', 'badges/fly.svg', 'badges/moon.svg'];
+            
+            badges.forEach((badge, index) => {
+                setTimeout(() => {
+                    window.testSpecificBadge(badge);
+                }, index * 500);
+            });
+        };
+
+        window.testNotificationSpam = function() {
+            const badges = ['badges/step.svg', 'badges/first.svg', 'badges/peace.svg', 'badges/fly.svg', 'badges/moon.svg', 'badges/star.svg', 'badges/echoes.svg'];
+            
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const randomBadge = badges[Math.floor(Math.random() * badges.length)];
+                    window.testSpecificBadge(randomBadge);
+                }, i * 200);
+            }
+        };
+
+        window.toggleSound = function() {
+            const checkbox = document.getElementById('soundEnabled');
+            checkbox.checked = !checkbox.checked;
+        };
+
+        function updateStats() {
+            sessionStats.notificationsShown++;
+            document.getElementById('notificationsShown').textContent = sessionStats.notificationsShown;
+        }
+
+        function updateDisplay() {
+            const points = getPoints();
+            const badgePath = getBadge(points);
+            
+            document.getElementById('current-points').textContent = `${points} points`;
+            document.getElementById('current-badge-img').src = badgePath;
+            
+            const badgeNames = {
+                'badges/new.svg': { name: 'Nouveau', desc: 'Badge d\'entrée pour ceux qui découvrent ECHOES' },
+                'badges/step.svg': { name: 'Premiers Pas', desc: 'Premiers pas significatifs dans la plateforme' },
+                'badges/first.svg': { name: 'Premier Impact', desc: 'Commence à se faire remarquer' },
+                'badges/peace.svg': { name: 'Paix', desc: 'Présence bienveillante et constructive' },
+                'badges/fly.svg': { name: 'Envol', desc: 'Prend son envol dans la communauté' },
+                'badges/moon.svg': { name: 'Lune', desc: 'Profil visionnaire et original' },
+                'badges/star.svg': { name: 'Étoile', desc: 'Figure centrale de la communauté' },
+                'badges/echoes.svg': { name: 'ECHOES', desc: 'Statut officiel validé' }
+            };
+            
+            const currentBadgeInfo = badgeNames[badgePath];
+            if (currentBadgeInfo) {
+                document.getElementById('current-badge-name').textContent = currentBadgeInfo.name;
+                document.getElementById('current-badge-description').textContent = currentBadgeInfo.desc;
+            }
+            
+            // Update stats
+            document.getElementById('pointsEarned').textContent = points;
+        }
+
+        function updateSessionTime() {
+            const elapsed = Date.now() - sessionStats.sessionStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('sessionTime').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+            updateDisplay();
+            
+            // Update session time every second
+            setInterval(updateSessionTime, 1000);
+        });
+
+        // Listen for points changes
+        document.addEventListener('pointsChanged', updateDisplay);
+    </script>
+</body>
+</html>

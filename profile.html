@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Profil</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    <link rel="shortcut icon" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="supabase-client.js"></script>
+    <script defer src="auth.js"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="supabase-client.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        /* Nouveaux styles pour lisibilité des statistiques / badges / média */
+        .profile-header { /* ajuste l'espace entre nom et stats */
+            margin-bottom: 0.25rem; /* réduit l'écart visuel */
+        }
+        .stat-number {
+            font-weight: 800; /* chiffre plus épais */
+            font-size: 1.125rem;
+        }
+        .stat-label {
+            font-weight: 400; /* label plus fin */
+            font-size: 0.75rem;
+        }
+        .stat-item i { /* petite icône à côté du chiffre */
+            vertical-align: middle;
+            margin-right: 0.35rem;
+        }
+        .badge-label {
+            font-size: 0.7rem;
+            margin-top: 0.35rem;
+            color: rgba(255,255,255,0.8);
+        }
+        .badge.rare > div:first-child { /* neutralisé: pas de mise en avant */
+            box-shadow: none;
+            transform: none;
+        }
+        /* Neutraliser les fonds colorés des badges (gradients, couleurs) */
+        .badge > div:first-child {
+            background: transparent !important;
+        }
+        .post-media {
+            object-fit: cover;
+            max-height: 15rem; /* taille uniforme */
+            width: 100%;
+        }
+        /* Onglets : espacement réduit et transition douce pour l'état actif */
+        .tabs { margin-bottom: 0.75rem; }
+        .tab-btn { transition: all 160ms ease; }
+        .tab-btn[aria-pressed="true"] {
+            box-shadow: 0 6px 18px rgba(59,130,246,0.12);
+            transform: translateY(-2px);
+        }
+
+        /* === Ajout : gestion centralisée de la couleur du texte pour thème sombre/clair ===
+           On utilise des variables CSS et un override global pour garantir que
+           le texte passe en blanc en sombre et en noir en clair sans modifier le JS.
+        */
+        :root {
+            --main-text: #000000;            /* texte par défaut (thème clair) */
+            --muted-text: rgba(0,0,0,0.55);  /* texte atténué par défaut */
+        }
+        html.dark {
+            --main-text: #ffffff;            /* texte en thème sombre */
+            --muted-text: rgba(255,255,255,0.78);
+        }
+
+        /* Forcer la couleur de texte principale via body pour surclasser les utilitaires Tailwind */
+        body {
+            color: var(--main-text) !important;
+        }
+        /* Utilitaires courants qui affichent du texte atténué/probablement en .opacity-75 */
+        .opacity-75 {
+            color: var(--muted-text) !important;
+        }
+        /* Assurer que les classes text-white/text-black suivent la variable principale */
+        .text-white, .text-black {
+            color: var(--main-text) !important;
+        }
+        /* Si des SVG/icônes utilisent currentColor, elles suivront automatiquement la variable */
+        svg {
+            color: inherit;
+        }
+
+        /* === Nouveaux styles pour mise en valeur du bloc profil/bannière === */
+        .profile-banner {
+            /* hauteur augmentée pour plus d'impact */
+            height: 12rem; /* équiv. h-48 */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        }
+        /* Ajustements du bloc photo/nom/pseudo */
+        .profile-block { /* regroupe photo/nom/pseudo et ajoute séparation nette des stats */
+            padding-top: 0.5rem;
+            padding-bottom: 1rem;
+        }
+        .profile-avatar {
+            width: 7rem; /* w-28 */
+            height: 7rem;
+        }
+        .profile-name {
+            font-size: 1.5rem; /* text-3xl environ */
+            font-weight: 800;
+            line-height: 1.05;
+        }
+        .profile-handle {
+            font-size: 1rem;            /* augmenté */
+            font-weight: 800;           /* plus gras pour meilleure lisibilité */
+            color: var(--main-text) !important; /* s'aligne sur la couleur principale (clair/sombre) */
+            text-shadow: 0 1px 0 rgba(0,0,0,0.25); /* léger relief pour contraster sur fonds sombres */
+            background: rgba(255,255,255,0.02); /* petit fond pour détacher du background */
+            padding: 0.08rem 0.28rem;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            /* Déplacement visuel vers le bas réduit (≈ 1cm) sans affecter le flux */
+            transform: translateY(1cm);
+            transition: transform 220ms ease;
+        }
+        /* style du bouton de modification du pseudo */
+        .edit-handle-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 0.18rem 0.45rem;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            color: var(--main-text);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+
+            /* Aligner visuellement le bouton avec le pseudo */
+            transform: translateY(1cm);
+            transition: transform 220ms ease;
+        }
+
+        /* Espace clair entre le groupe profil et les stats */
+        .profile-separator {
+            margin-top: 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            padding-top: 0.75rem;
+        }
+
+        /* Ensure a pleasant max width on large desktop screens without breaking Tailwind setup */
+        /* Conteneur principal : largeur par défaut un peu réduite */
+        .content-max {
+            max-width: 1000px; /* largeur par défaut (affecte grand écrans) */
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* Pour écrans de bureau larges, resserrer encore la largeur pour meilleure lisibilité */
+        @media (min-width: 1024px) {
+            .content-max {
+                max-width: 900px; /* largeur cible pour écrans de bureau */
+            }
+        }
+
+        /* === Navigation flottante sans animation === */
+        .floating-nav {
+            z-index: 9999; /* toujours au-dessus du contenu */
+            transition: none;
+            will-change: auto;
+            pointer-events: auto; /* s'assurer qu'il reçoit les interactions */
+        }
+        .floating-nav:hover,
+        .floating-nav:focus-within {
+            transform: translateX(-50%); /* aucun lift au survol */
+            box-shadow: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .floating-nav {
+                transition: none;
+            }
+            .floating-nav:hover,
+            .floating-nav:focus-within {
+                transform: translateX(-50%);
+                box-shadow: none;
+            }
+        }
+
+        /* === Background selector: responsive grid with wrap and scroll === */
+        #background-selector {
+            max-height: 16rem; /* allow many thumbnails without stretching the page */
+            overflow-y: auto;
+            padding-right: 0.25rem; /* small gutter for scrollbar */
+        }
+        /* Override the flex containers created by JS to behave as a grid */
+        #background-selector .flex {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+            gap: 0.5rem; /* consistent spacing between thumbnails */
+        }
+        /* Ensure uniform, larger clickable targets regardless of Tailwind classes set by JS */
+        #background-selector button {
+            width: 64px !important;
+            height: 64px !important;
+            border-radius: 0.5rem; /* slightly rounded squares for better grid density */
+        }
+        /* Hide the opposite theme group via JS remains intact; no change needed here */
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white dark:text-dark-text dark:bg-gradient-to-br dark:from-blue-900 dark:to-black">
+    <div id="vanta-bg" class="fixed inset-0 -z-10 bg-cover bg-center"></div>
+    <!-- Navigation -->
+    <nav class="glass-card floating-nav fixed bottom-4 left-1/2 transform -translate-x-1/2 rounded-full px-4 sm:px-6 py-3 sm:py-3 flex items-center justify-center space-x-3 sm:space-x-8 z-50" role="navigation" aria-label="Navigation principale">
+        <a href="index.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="home" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="videos.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="video" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+                <a href="forum.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="message-square" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="messages.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="mail" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="calm.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="book" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pt-8 pb-24 content-max">
+        <!-- Profile Header -->
+        <div class="glass-card rounded-2xl overflow-hidden mb-6">
+            <!-- Banner -->
+            <div class="profile-banner bg-gradient-to-r from-blue-500 to-purple-600 relative">
+                <button class="absolute top-3 right-3 bg-black bg-opacity-50 p-2 rounded-full">
+                    <i data-feather="edit-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Profile Info -->
+            <div class="p-6 pt-0">
+                <div class="flex items-end -mt-24 profile-header profile-block">
+                    <div class="relative">
+                        <img id="profile-avatar" src="http://static.photos/people/200x200/42" alt="Profile" class="profile-avatar rounded-full border-4 border-dark-primary">
+                        <button class="absolute bottom-0 right-0 bg-dark-accent p-1 rounded-full">
+                            <i data-feather="camera" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="ml-4 mb-2">
+                        <h1 id="profile-name" class="profile-name">Jean Dupont</h1>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <p class="profile-handle" id="profile-handle">@jeandupont</p>
+                            <button id="edit-handle-btn" class="edit-handle-btn" aria-label="Modifier le pseudo" title="Modifier le pseudo">
+                                <i data-feather="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="flex justify-around py-3 border-y border-dark-secondary profile-separator">
+                    <div class="text-center stat-item">
+                        <div class="text-lg stat-number flex items-center justify-center">
+                            <i data-feather="star" class="w-4 h-4"></i><span id="stat-points">1,248</span>
+                        </div>
+                        <div class="text-xs opacity-75 stat-label">Points</div>
+                    </div>
+                    <div class="text-center stat-item">
+                        <div class="text-lg stat-number flex items-center justify-center">
+                            <i data-feather="user" class="w-4 h-4"></i><span id="stat-followers">89</span>
+                        </div>
+                        <div class="text-xs opacity-75 stat-label">Abonnés</div>
+                    </div>
+                    <div class="text-center stat-item">
+                        <div class="text-lg stat-number flex items-center justify-center">
+                            <i data-feather="users" class="w-4 h-4"></i><span id="stat-following">124</span>
+                        </div>
+                        <div class="text-xs opacity-75 stat-label">Abonnements</div>
+                    </div>
+                </div>
+                
+                <!-- Badges (pliable) -->
+                <div class="py-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-lg font-bold">Badges</h2>
+                        <button id="badges-toggle" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-sm">Afficher</button>
+                    </div>
+                    <div id="badges-panel" style="display:none;">
+                    <div class="flex space-x-3 items-end">
+                        <div class="badge" role="button" tabindex="0" aria-label="Badge Novice - Le premier badge obtenu en rejoignant la plateforme - 0-499 points">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center p-1">
+                                <img src="badges/novice.svg" alt="Badge Novice" class="w-10 h-10 rounded-full">
+                            </div>
+                            <div class="badge-label text-center">Novice</div>
+                            <div class="badge-tooltip">Le premier badge obtenu en rejoignant la plateforme - 0-499 points</div>
+                        </div>
+                        <div class="badge rare" role="button" tabindex="0" aria-label="Badge New - Premier contenu ou interaction - 500-999 points">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center p-1">
+                                <img src="badges/new.svg" alt="Badge New" class="w-10 h-10 rounded-full">
+                            </div>
+                            <div class="badge-label text-center">New</div>
+                            <div class="badge-tooltip">Premier contenu ou interaction - 500-999 points</div>
+                        </div>
+                        <div class="badge" role="button" tabindex="0" aria-label="Badge First - Première action marquante - 1 000-1 499 points">
+                            <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center p-1">
+                                <img src="badges/first.svg" alt="Badge First" class="w-10 h-10 rounded-full">
+                            </div>
+                            <div class="badge-label text-center">First</div>
+                            <div class="badge-tooltip">Première action marquante - 1 000-1 499 points</div>
+                        </div>
+                        <button class="w-12 h-12 bg-dark-secondary bg-opacity-30 rounded-full flex items-center justify-center" aria-label="Ajouter un badge">
+                            <i data-feather="plus" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <!-- Démos reliées -->
+                    <div class="mt-4">
+                        <h3 class="text-md font-semibold mb-2">Démos</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="notification-demo.html" class="px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50">Notifications</a>
+                            <a href="badge-demo.html" class="px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50">Badges</a>
+                            <a href="user-badge-demo.html" class="px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50">Badges Utilisateur</a>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paramètres (thème + fond + compte) -->
+        <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold">Paramètres</h2>
+                <button id="settings-toggle" class="px-2 py-1 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-xs leading-none">Ouvrir</button>
+            </div>
+            <div id="settings-panel" style="display:none;">
+                <!-- Thème: clair/sombre -->
+                <div class="mb-6">
+                    <h3 class="text-md font-semibold mb-2">Apparence</h3>
+            <div class="flex items-center gap-3">
+                <button id="theme-toggle" class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 flex items-center gap-2">
+                    <i data-feather="moon" id="theme-icon" class="w-4 h-4"></i>
+                    <span id="theme-label">Thème sombre</span>
+                </button>
+            </div>
+        </div>
+        <!-- Choisir un fond d'écran -->
+                <div class="mb-6">
+                    <h3 class="text-md font-semibold mb-2">Choisir un fond d'écran</h3>
+                    <p class="text-sm opacity-75 mb-3">Sélectionnez un fond adapté au thème actif.</p>
+                    <div id="background-selector" class="flex items-center gap-3"></div>
+                </div>
+                <!-- Compte -->
+                <div class="mb-2">
+                    <h3 class="text-md font-semibold mb-2">Compte</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50" data-auth="signout" data-visible="auth">Se déconnecter</button>
+                        <button id="delete-account" class="px-4 py-2 rounded-full bg-red-600 text-white" data-visible="auth">Supprimer définitivement le compte</button>
+                    </div>
+                    <p class="text-xs opacity-75 mt-2" data-visible="auth">La suppression efface votre profil et vos contenus. La suppression complète du compte d'authentification nécessite une action côté serveur.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bio publique -->
+        <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold">Bio</h2>
+                <button id="bio-toggle" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-sm" data-visible="auth">Modifier</button>
+            </div>
+            <p id="bio-display" class="text-sm opacity-75 mb-3">Aucune bio pour le moment.</p>
+            <div id="bio-editor" data-visible="auth" style="display:none;">
+                <p class="text-sm opacity-75 mb-2">Partagez une courte bio visible par tous (500 caractères max).</p>
+                <textarea id="bio-input" maxlength="500" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" rows="4" placeholder="Écrivez votre bio..."></textarea>
+                <div class="flex justify-between items-center mt-2">
+                    <span id="bio-count" class="text-xs opacity-75">0 / 500</span>
+                    <button id="bio-save" class="px-4 py-2 rounded-full bg-dark-accent text-white">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pensée du moment (style distinct) -->
+        <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold">Pensée du moment</h2>
+                <button id="thought-toggle" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 text-sm" data-visible="auth">Éditer</button>
+            </div>
+            <div class="rounded-xl p-4 border border-dark-secondary bg-dark-secondary bg-opacity-20">
+                <p id="thought-display" class="italic text-sm">Rien à partager pour le moment.</p>
+            </div>
+            <div id="thought-editor" data-visible="auth" style="display:none;" class="mt-3">
+                <p class="text-sm opacity-75 mb-2">Exprimez votre pensée (max 300 caractères).</p>
+                <textarea id="thought-input" maxlength="300" class="w-full bg-transparent border border-dark-secondary rounded-lg p-3 text-sm" rows="3" placeholder="Votre pensée...\n"></textarea>
+                <div class="flex justify-end mt-2">
+                    <button id="thought-save" class="px-4 py-2 rounded-full bg-dark-accent text-white">Publier</button>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <!-- Profile Tabs -->
+        <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex space-x-4 overflow-x-auto tabs" role="tablist" aria-label="Profile tabs">
+                <button class="px-4 py-2 rounded-full bg-dark-accent text-white whitespace-nowrap tab-btn" data-tab="posts" aria-pressed="true">Mes Posts</button>
+                <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 whitespace-nowrap tab-btn" data-tab="liked" aria-pressed="false">Vidéos Likées</button>
+                <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 whitespace-nowrap tab-btn" data-tab="podcasts" aria-pressed="false">Podcasts</button>
+                <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 whitespace-nowrap tab-btn" data-tab="activity" aria-pressed="false">Activité</button>
+            </div>
+        </div>
+
+        <!-- User Posts -->
+        <div class="space-y-6">
+            <!-- Post 1 -->
+            <div class="glass-card rounded-2xl p-4" data-aos="fade-up">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-3">
+                        <img src="http://static.photos/people/200x200/42" alt="Profile" class="w-10 h-10 rounded-full">
+                        <div>
+                            <h3 class="font-medium">Jean Dupont</h3>
+                            <p class="text-xs opacity-75">Il y a 2 heures · Jean Dupont</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="p-1 hover:bg-dark-secondary hover:bg-opacity-30 rounded">
+                            <i data-feather="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-1 hover:bg-dark-secondary hover:bg-opacity-30 rounded">
+                            <i data-feather="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="mb-4">Découvrez cette vue incroyable que j'ai eu ce matin lors de ma randonnée ! 🏔️ #nature #aventure</p>
+                <img src="http://static.photos/nature/640x360/1" alt="Post" class="w-full rounded-xl mb-4 post-media">
+                <div class="flex justify-between text-sm">
+                    <div class="flex items-center space-x-2">
+                        <button class="flex items-center space-x-1">
+                            <i data-feather="heart" class="w-4 h-4"></i>
+                            <span>124</span>
+                        </button>
+                        <button class="flex items-center space-x-1">
+                            <i data-feather="message-square" class="w-4 h-4"></i>
+                            <span>23</span>
+                        </button>
+                    </div>
+                    <button class="flex items-center space-x-1">
+                        <i data-feather="share-2" class="w-4 h-4"></i>
+                        <span>Partager</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Post 2 -->
+            <div class="glass-card rounded-2xl p-4" data-aos="fade-up">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-3">
+                        <img src="http://static.photos/people/200x200/42" alt="Profile" class="w-10 h-10 rounded-full">
+                        <div>
+                            <h3 class="font-medium">Jean Dupont</h3>
+                            <p class="text-xs opacity-75">Il y a 1 jour · Jean Dupont</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="p-1 hover:bg-dark-secondary hover:bg-opacity-30 rounded">
+                            <i data-feather="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-1 hover:bg-dark-secondary hover:bg-opacity-30 rounded">
+                            <i data-feather="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="mb-4">Juste partagé mon premier podcast sur les bienfaits de la méditation ! N'hésitez pas à me donner votre avis dans les commentaires 🧘‍♀️ #bienêtre #podcast</p>
+                <div class="bg-dark-secondary rounded-xl p-4 mb-4 flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-dark-accent rounded-lg flex items-center justify-center">
+                        <i data-feather="play" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium">Méditation quotidienne</h4>
+                        <p class="text-sm opacity-75">15 min • Jean Dupont</p>
+                    </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <div class="flex items-center space-x-2">
+                        <button class="flex items-center space-x-1">
+                            <i data-feather="heart" class="w-4 h-4"></i>
+                            <span>89</span>
+                        </button>
+                        <button class="flex items-center space-x-1">
+                            <i data-feather="message-square" class="w-4 h-4"></i>
+                            <span>12</span>
+                        </button>
+                    </div>
+                    <button class="flex items-center space-x-1">
+                        <i data-feather="share-2" class="w-4 h-4"></i>
+                        <span>Partager</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize AOS and Feather Icons + Theme wiring via global-theme.js
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.AOS) {
+                AOS.init({ duration: 800, easing: 'ease-in-out', once: true });
+            }
+            if (window.feather) {
+                feather.replace();
+            }
+
+            // Synchroniser l'UI du bouton thème avec l'état actuel
+            const themeBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeLabel = document.getElementById('theme-label');
+            const isDark = document.documentElement.classList.contains('dark');
+            if (themeIcon) themeIcon.setAttribute('data-feather', isDark ? 'moon' : 'sun');
+            if (themeLabel) themeLabel.textContent = isDark ? 'Thème sombre' : 'Thème clair';
+            if (window.feather) feather.replace();
+
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const next = window.toggleTheme ? window.toggleTheme() : (document.documentElement.classList.toggle('dark') ? 'dark' : 'light');
+                    if (themeIcon) themeIcon.setAttribute('data-feather', next === 'dark' ? 'moon' : 'sun');
+                    if (themeLabel) themeLabel.textContent = next === 'dark' ? 'Thème sombre' : 'Thème clair';
+                    if (window.feather) feather.replace();
+                });
+            }
+
+            // Simple tab active state (visuel seulement)
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.setAttribute('aria-pressed', 'false');
+                        b.classList.remove('bg-dark-accent', 'text-white');
+                        b.classList.add('bg-dark-secondary');
+                    });
+                    btn.setAttribute('aria-pressed', 'true');
+                    btn.classList.add('bg-dark-accent', 'text-white');
+                    btn.classList.remove('bg-dark-secondary');
+                });
+            });
+
+            // Edition du pseudo : prompt simple
+            const editHandleBtn = document.getElementById('edit-handle-btn');
+            if (editHandleBtn) {
+                editHandleBtn.addEventListener('click', () => {
+                    const handleEl = document.getElementById('profile-handle');
+                    if (!handleEl) return;
+                    const current = handleEl.textContent.trim().replace(/^/, '');
+                    const newHandle = prompt('Nouveau pseudo (sans @)', current);
+                    if (newHandle !== null) {
+                        const sanitized = newHandle.trim();
+                        if (sanitized.length === 0) return;
+                        handleEl.textContent = '@' + sanitized;
+                        editHandleBtn.setAttribute('aria-label', 'Modifier le pseudo: ' + '@' + sanitized);
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Profile data loader via Supabase + badges toggle
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (!window.getSupabase) return;
+                const supabase = await window.getSupabase();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('full_name, username, avatar_url, points, posts_count, followers_count, following_count, bio, thought')
+                    .eq('id', user.id)
+                    .single();
+                if (error) throw error;
+                if (!profile) return;
+                const nameEl = document.getElementById('profile-name');
+                const handleEl = document.getElementById('profile-handle');
+                const avatarEl = document.getElementById('profile-avatar');
+                const bioDisplayEl = document.getElementById('bio-display');
+                const bioInputEl = document.getElementById('bio-input');
+                const thoughtDisplayEl = document.getElementById('thought-display');
+                const thoughtInputEl = document.getElementById('thought-input');
+                if (nameEl && profile.full_name) nameEl.textContent = profile.full_name;
+                if (handleEl && profile.username) handleEl.textContent = '@' + profile.username;
+                if (avatarEl && profile.avatar_url) avatarEl.src = profile.avatar_url;
+                if (bioDisplayEl) bioDisplayEl.textContent = profile.bio && profile.bio.length ? profile.bio : 'Aucune bio pour le moment.';
+                if (bioInputEl && profile.bio) bioInputEl.value = profile.bio;
+                if (thoughtDisplayEl) thoughtDisplayEl.textContent = profile.thought && profile.thought.length ? profile.thought : 'Rien à partager pour le moment.';
+                if (thoughtInputEl && profile.thought) thoughtInputEl.value = profile.thought;
+                const s = (id, v)=>{ const el=document.getElementById(id); if(el && (v||v===0)) el.textContent=String(v); };
+                s('stat-points', profile.points);
+                s('stat-posts', profile.posts_count);
+                s('stat-followers', profile.followers_count);
+                s('stat-following', profile.following_count);
+                document.dispatchEvent(new Event('pointsChanged'));
+                if (window.feather) feather.replace();
+            } catch(e) { /* silent */ }
+        });
+    </script>
+
+    <script>
+        // Badges / Bio / Pensée / Paramètres toggles + save
+        document.addEventListener('DOMContentLoaded', () => {
+            // badges
+            const badgesToggle = document.getElementById('badges-toggle');
+            const badgesPanel = document.getElementById('badges-panel');
+            if (badgesToggle && badgesPanel) {
+                badgesToggle.addEventListener('click', () => {
+                    const show = badgesPanel.style.display === 'none';
+                    badgesPanel.style.display = show ? '' : 'none';
+                    badgesToggle.textContent = show ? 'Masquer' : 'Afficher';
+                });
+            }
+            // bio
+            const bioToggle = document.getElementById('bio-toggle');
+            const bioEditor = document.getElementById('bio-editor');
+            if (bioToggle && bioEditor) {
+                bioToggle.addEventListener('click', () => {
+                    bioEditor.style.display = bioEditor.style.display === 'none' ? '' : 'none';
+                });
+            }
+            // pensée
+            const thoughtToggle = document.getElementById('thought-toggle');
+            const thoughtEditor = document.getElementById('thought-editor');
+            if (thoughtToggle && thoughtEditor) {
+                thoughtToggle.addEventListener('click', () => {
+                    thoughtEditor.style.display = thoughtEditor.style.display === 'none' ? '' : 'none';
+                });
+            }
+            // paramètres
+            const settingsToggle = document.getElementById('settings-toggle');
+            const settingsPanel = document.getElementById('settings-panel');
+            if (settingsToggle && settingsPanel) {
+                settingsToggle.addEventListener('click', () => {
+                    const show = settingsPanel.style.display === 'none';
+                    settingsPanel.style.display = show ? '' : 'none';
+                    settingsToggle.textContent = show ? 'Fermer' : 'Ouvrir';
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Bio save + pensée save + compte actions
+        document.addEventListener('DOMContentLoaded', () => {
+            const bioInput = document.getElementById('bio-input');
+            const bioCount = document.getElementById('bio-count');
+            const bioSave = document.getElementById('bio-save');
+            const bioDisplay = document.getElementById('bio-display');
+            const thoughtInput = document.getElementById('thought-input');
+            const thoughtSave = document.getElementById('thought-save');
+            const thoughtDisplay = document.getElementById('thought-display');
+            if (bioInput && bioCount) {
+                const updateCount = () => { bioCount.textContent = `${bioInput.value.length} / 500`; };
+                bioInput.addEventListener('input', updateCount);
+                updateCount();
+            }
+            if (bioSave) {
+                bioSave.addEventListener('click', async () => {
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Veuillez vous connecter.'); return; }
+                        const value = (bioInput.value || '').slice(0, 500);
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({ bio: value, updated_at: new Date().toISOString() })
+                            .eq('id', user.id);
+                        if (error) throw error;
+                        if (bioDisplay) bioDisplay.textContent = value || 'Aucune bio pour le moment.';
+                        alert('Bio mise à jour.');
+                    } catch (e) { alert('Erreur lors de la mise à jour de la bio.'); }
+                });
+            }
+            if (thoughtSave) {
+                thoughtSave.addEventListener('click', async () => {
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Veuillez vous connecter.'); return; }
+                        const value = (thoughtInput.value || '').slice(0, 300);
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({ thought: value, updated_at: new Date().toISOString() })
+                            .eq('id', user.id);
+                        if (error) throw error;
+                        if (thoughtDisplay) thoughtDisplay.textContent = value || 'Rien à partager pour le moment.';
+                        alert('Pensée publiée.');
+                    } catch (e) { alert('Erreur lors de la mise à jour de la pensée.'); }
+                });
+            }
+
+            const deleteBtn = document.getElementById('delete-account');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const c1 = confirm('Êtes-vous sûr de vouloir supprimer définitivement votre compte ?');
+                    if (!c1) return;
+                    const c2 = confirm('Cette action est irréversible. Confirmez la suppression.');
+                    if (!c2) return;
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Non connecté.'); return; }
+                        // Supprime le profil (les posts peuvent être supprimés en cascade si FK configurée)
+                        const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+                        if (error) throw error;
+                        await supabase.auth.signOut();
+                        alert('Votre profil a été supprimé. Pour supprimer totalement le compte d\'authentification, configurez une fonction serveur (Supabase Edge Function) avec la clé de service.');
+                        window.location.href = 'index.html';
+                    } catch (e) {
+                        alert('Suppression impossible (vérifiez les règles RLS et la configuration).');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Badge Profile Integration Script -->
+    <script type="module">
+        import { getPoints, getBadge } from './points.js';
+
+        // Badge information with colors and descriptions (16 badges)
+        const BADGE_INFO = {
+            'badges/novice.svg': {
+                name: 'Novice',
+                description: 'Le premier badge obtenu en rejoignant la plateforme',
+                range: '0-499 points',
+                gradient: 'from-blue-400 to-blue-600'
+            },
+            'badges/new.svg': {
+                name: 'New',
+                description: 'Premier contenu ou interaction',
+                range: '500-999 points',
+                gradient: 'from-green-400 to-green-600'
+            },
+            'badges/first.svg': {
+                name: 'First',
+                description: 'Première action marquante (post, vidéo, audio)',
+                range: '1 000-1 499 points',
+                gradient: 'from-yellow-400 to-yellow-600'
+            },
+            'badges/step.svg': {
+                name: 'Step',
+                description: 'Premiers progrès (ex: 5 posts)',
+                range: '1 500-1 999 points',
+                gradient: 'from-purple-400 to-purple-600'
+            },
+            'badges/calme.svg': {
+                name: 'Calme',
+                description: 'Participation active à calm.html (to-do, journal, bien-être)',
+                range: '2 000-2 999 points',
+                gradient: 'from-teal-400 to-teal-600'
+            },
+            'badges/vérifié.svg': {
+                name: 'Vérifié',
+                description: 'Compte authentifié ou créateur/artiste reconnu',
+                range: '3 000-3 999 points',
+                gradient: 'from-indigo-400 to-indigo-600'
+            },
+            'badges/vision.svg': {
+                name: 'Vision',
+                description: 'Contenus inspirants et engageants',
+                range: '4 000-5 499 points',
+                gradient: 'from-orange-400 to-orange-600'
+            },
+            'badges/rare.svg': {
+                name: 'Rare',
+                description: 'Événement spécial ou contenu viral',
+                range: '5 500-6 999 points',
+                gradient: 'from-red-400 to-red-600'
+            },
+            'badges/collector.svg': {
+                name: 'Collector',
+                description: 'Collectionne des badges / engagement constant',
+                range: '7 000-8 499 points',
+                gradient: 'from-cyan-400 to-cyan-600'
+            },
+            'badges/explorateur.svg': {
+                name: 'Explorateur',
+                description: 'Explore communautés, musiques, vidéos, profils…',
+                range: '8 500-9 999 points',
+                gradient: 'from-emerald-400 to-emerald-600'
+            },
+            'badges/star.svg': {
+                name: 'Star',
+                description: 'Popularité (+1k abonnés, posts massivement likés)',
+                range: '10 000-11 999 points',
+                gradient: 'from-cyan-400 to-cyan-600'
+            },
+            'badges/or.svg': {
+                name: 'Or',
+                description: 'Contribution majeure et régulière',
+                range: '12 000-14 499 points',
+                gradient: 'from-amber-400 to-amber-600'
+            },
+            'badges/platine.svg': {
+                name: 'Platine',
+                description: 'Créateurs/artistes très suivis et actifs',
+                range: '14 500-16 999 points',
+                gradient: 'from-slate-300 to-slate-500'
+            },
+            'badges/diamant.svg': {
+                name: 'Diamant',
+                description: 'Activité exceptionnelle / grande influence',
+                range: '17 000-19 999 points',
+                gradient: 'from-sky-300 to-sky-500'
+            },
+            'badges/Ambassadeur.svg': {
+                name: 'Ambassadeur',
+                description: 'Participe à la croissance d’ECHOES (invites, représentation)',
+                range: '20 000-24 999 points',
+                gradient: 'from-fuchsia-400 to-fuchsia-600'
+            },
+            'badges/echoes.svg': {
+                name: 'Echoes',
+                description: 'Badge ultime, identité de l’app, réservé à l’élite',
+                range: '25 000+ points',
+                gradient: 'from-rose-400 to-rose-600'
+            }
+        };
+
+        // Obtenir la liste des badges obtenus selon les points (16 paliers)
+        function getEarnedBadges(points) {
+            const earned = [];
+            if (points >= 0) earned.push('badges/novice.svg');
+            if (points >= 500) earned.push('badges/new.svg');
+            if (points >= 1000) earned.push('badges/first.svg');
+            if (points >= 1500) earned.push('badges/step.svg');
+            if (points >= 2000) earned.push('badges/calme.svg');
+            if (points >= 3000) earned.push('badges/vérifié.svg');
+            if (points >= 4000) earned.push('badges/vision.svg');
+            if (points >= 5500) earned.push('badges/rare.svg');
+            if (points >= 7000) earned.push('badges/collector.svg');
+            if (points >= 8500) earned.push('badges/explorateur.svg');
+            if (points >= 10000) earned.push('badges/star.svg');
+            if (points >= 12000) earned.push('badges/or.svg');
+            if (points >= 14500) earned.push('badges/platine.svg');
+            if (points >= 17000) earned.push('badges/diamant.svg');
+            if (points >= 20000) earned.push('badges/Ambassadeur.svg');
+            if (points >= 25000) earned.push('badges/echoes.svg');
+            return earned;
+        }
+
+        // Met à jour l'affichage des badges sur le profil (3 derniers badges obtenus)
+        function updateProfileBadges() {
+            const points = getPoints();
+            const earnedBadges = getEarnedBadges(points);
+            const badgeContainer = document.querySelector('.flex.space-x-3.items-end');
+            
+            if (!badgeContainer) return;
+
+            // Conserver le bouton + si présent
+            const addButton = badgeContainer.querySelector('button[aria-label*="Ajouter"]');
+            badgeContainer.innerHTML = '';
+
+            // Les 3 derniers obtenus
+            const badgesToShow = earnedBadges.slice(-3);
+            
+            badgesToShow.forEach((badgePath, index) => {
+                const badgeInfo = BADGE_INFO[badgePath];
+                if (!badgeInfo) return;
+
+                const badgeElement = document.createElement('div');
+                badgeElement.className = `badge ${index === badgesToShow.length - 1 ? 'rare' : ''}`;
+                badgeElement.setAttribute('role', 'button');
+                badgeElement.setAttribute('tabindex', '0');
+                badgeElement.setAttribute('aria-label', `Badge ${badgeInfo.name} - ${badgeInfo.description} - ${badgeInfo.range}`);
+                
+                badgeElement.innerHTML = `
+                    <div class="w-12 h-12 bg-gradient-to-br ${badgeInfo.gradient} rounded-full flex items-center justify-center p-1">
+                        <img src="${badgePath}" alt="Badge ${badgeInfo.name}" class="w-10 h-10 rounded-full">
+                    </div>
+                    <div class="badge-label text-center">${badgeInfo.name}</div>
+                    <div class="badge-tooltip">${badgeInfo.description} - ${badgeInfo.range}</div>
+                `;
+                
+                badgeContainer.appendChild(badgeElement);
+            });
+
+            if (earnedBadges.length < 16 && addButton) {
+                badgeContainer.appendChild(addButton);
+            }
+        }
+
+        // Initialize badge display when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProfileBadges();
+        });
+
+        // Update badges when points change
+        document.addEventListener('pointsChanged', () => {
+            updateProfileBadges();
+        });
+
+        // Make function globally available for testing
+        window.updateProfileBadges = updateProfileBadges;
+    </script>
+
+<script src="global-theme.js"></script>
+<script src="notifications.js"></script>
+<script src="user-badge-display.js"></script>
+<script src="dynamic-interactions.js"></script>
+<script src="badge-system.js"></script>
+<script src="background-selector.js"></script>
+<script src="background-init.js"></script>
+</body>
+</html>
