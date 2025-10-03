@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr" class="dark">
 <head>
@@ -238,6 +239,20 @@
     <script>
         // Auth modal + Full dynamic feed + post publish
         document.addEventListener('DOMContentLoaded', async () => {
+            // Vérification immédiate de l'authentification
+            try {
+                const supabase = await window.getSupabase();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Erreur Supabase:', error);
+                window.location.href = 'login.html';
+                return;
+            }
+            
             const supabase = await window.getSupabase();
             const app = document.getElementById('app-root');
             // modal wiring
@@ -247,16 +262,22 @@
             if (openAuth && modal) openAuth.addEventListener('click', ()=>{ modal.classList.remove('hidden'); modal.classList.add('flex'); });
             if (closeAuth && modal) closeAuth.addEventListener('click', ()=>{ modal.classList.add('hidden'); modal.classList.remove('flex'); });
 
-            // Require auth before showing app
+            // Require auth before showing app - REDIRECT TO LOGIN
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+                // Rediriger vers la page de login au lieu d'afficher un modal
+                window.location.href = 'login.html';
+                return;
             } else {
                 if (app) app.style.display = '';
             }
             supabase.auth.onAuthStateChange((_e, s) => {
-                if (s && app) app.style.display = '';
-                if (s && modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+                if (s && app) {
+                    app.style.display = '';
+                } else if (!s) {
+                    // Rediriger vers login si l'utilisateur se déconnecte
+                    window.location.href = 'login.html';
+                }
             });
 
             const feedEl = document.getElementById('feed');
