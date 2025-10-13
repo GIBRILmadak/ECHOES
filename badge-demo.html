@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démonstration du Système de Badges - ECHOES</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            primary: '#0f172a',
+                            secondary: '#1e293b',
+                            accent: '#3b82f6',
+                            text: '#f8fafc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="auth-guard.js"></script>
+    <script src="notifications.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .badge-preview {
+            transition: all 0.3s ease;
+        }
+        .badge-preview:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        .current-badge {
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white">
+    <!-- Navigation -->
+    <nav class="glass-card fixed bottom-6 left-1/2 transform -translate-x-1/2 rounded-full px-8 py-3 flex items-center justify-center space-x-8 z-50">
+        <a href="index.html" class="p-2 rounded-full hover:bg-dark-secondary hover:bg-opacity-30">
+            <i data-feather="home" class="w-5 h-5"></i>
+        </a>
+        <a href="profile.html" class="p-2 rounded-full hover:bg-dark-secondary hover:bg-opacity-30">
+            <i data-feather="user" class="w-5 h-5"></i>
+        </a>
+    </nav>
+
+    <div class="container mx-auto px-4 pt-8 pb-24">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">Système de Badges ECHOES</h1>
+            <p class="text-lg opacity-75">Démonstration du système de progression</p>
+        </header>
+
+        <!-- Current Status -->
+        <div class="glass-card rounded-2xl p-6 mb-8 max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-4 text-center">Statut Actuel</h2>
+            <div class="flex items-center justify-center space-x-4 mb-2">
+                <img id="current-badge-img" src="badges/novice.svg" alt="Badge actuel" class="w-16 h-16">
+                <div class="text-center">
+                    <h3 id="current-badge-name" class="text-xl font-semibold">Novice</h3>
+                    <p id="current-badge-description" class="text-sm opacity-75">Le premier badge qu’un utilisateur obtient en rejoignant la plateforme</p>
+                </div>
+            </div>
+            <p id="current-points" class="text-lg font-bold text-blue-400 mt-2 text-center">0 points</p>
+        </div>
+
+        <!-- Points Controls -->
+        <div class="glass-card rounded-2xl p-6 mb-8 max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-4 text-center">Actions</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button onclick="simulateAction('like')" class="bg-pink-600 hover:bg-pink-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="heart" class="w-4 h-4"></i>
+                    <span>Like (+1)</span>
+                </button>
+                <button onclick="simulateAction('comment')" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="message-circle" class="w-4 h-4"></i>
+                    <span>Comment (+2)</span>
+                </button>
+                <button onclick="simulateAction('listen')" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="headphones" class="w-4 h-4"></i>
+                    <span>Écoute (+2)</span>
+                </button>
+                <button onclick="simulateAction('watch')" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="play" class="w-4 h-4"></i>
+                    <span>Vidéo (+2)</span>
+                </button>
+                <button onclick="simulateAction('message')" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="mail" class="w-4 h-4"></i>
+                    <span>Message (+1)</span>
+                </button>
+                <button onclick="addCustomPoints()" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="plus" class="w-4 h-4"></i>
+                    <span>+100 pts</span>
+                </button>
+                <button onclick="testNotification()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                    <i data-feather="bell" class="w-4 h-4"></i>
+                    <span>Test Notif</span>
+                </button>
+            </div>
+            <div class="mt-4 text-center">
+                <button onclick="resetPoints()" class="bg-gray-600 hover:bg-gray-700 px-6 py-2 rounded-lg">
+                    <i data-feather="refresh-cw" class="w-4 h-4 inline mr-2"></i>
+                    Réinitialiser
+                </button>
+            </div>
+        </div>
+
+        <!-- Badge Progression -->
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-2xl font-bold mb-6 text-center">Progression des Badges</h2>
+            <div class="grid gap-4">
+                <!-- 1. Novice -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/novice.svg">
+                    <img src="badges/novice.svg" alt="Badge Novice" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Novice</h3>
+                        <p class="text-sm opacity-75">Le premier badge obtenu en rejoignant la plateforme</p>
+                        <p class="text-xs text-blue-400">0 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-blue-500 h-2 rounded-full" data-range="0-499"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 2. New -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/new.svg">
+                    <img src="badges/new.svg" alt="Badge New" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">New</h3>
+                        <p class="text-sm opacity-75">Premier post ou première interaction (like, commentaire, abonnement)</p>
+                        <p class="text-xs text-blue-400">500 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-green-500 h-2 rounded-full" data-range="500-999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 3. First -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/first.svg">
+                    <img src="badges/first.svg" alt="Badge First" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">First</h3>
+                        <p class="text-sm opacity-75">Première action marquante (premier post/vidéo/musique publiée)</p>
+                        <p class="text-xs text-blue-400">1 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-yellow-500 h-2 rounded-full" data-range="1000-1499"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 4. Step -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/step.svg">
+                    <img src="badges/step.svg" alt="Badge Step" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Step</h3>
+                        <p class="text-sm opacity-75">Premiers progrès (ex. 5 posts réguliers)</p>
+                        <p class="text-xs text-blue-400">1 500 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-purple-500 h-2 rounded-full" data-range="1500-1999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 5. Calme -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/calme.svg">
+                    <img src="badges/calme.svg" alt="Badge Calme" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Calme</h3>
+                        <p class="text-sm opacity-75">Participation active à calm.html (to-do, journal, bien-être)</p>
+                        <p class="text-xs text-blue-400">2 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-pink-500 h-2 rounded-full" data-range="2000-2999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 6. Vérifié -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/vérifié.svg">
+                    <img src="badges/vérifié.svg" alt="Badge Vérifié" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Vérifié</h3>
+                        <p class="text-sm opacity-75">Compte authentifié ou créateur/artiste reconnu</p>
+                        <p class="text-xs text-blue-400">3 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-indigo-500 h-2 rounded-full" data-range="3000-3999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 7. Vision -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/vision.svg">
+                    <img src="badges/vision.svg" alt="Badge Vision" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Vision</h3>
+                        <p class="text-sm opacity-75">Contenus inspirants, motivants, créatifs avec engagement</p>
+                        <p class="text-xs text-blue-400">4 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-orange-500 h-2 rounded-full" data-range="4000-5499"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 8. Rare -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/rare.svg">
+                    <img src="badges/rare.svg" alt="Badge Rare" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Rare</h3>
+                        <p class="text-sm opacity-75">Événements uniques ou performance virale</p>
+                        <p class="text-xs text-blue-400">5 500 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-red-500 h-2 rounded-full" data-range="5500-6999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 9. Collector -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/collector.svg">
+                    <img src="badges/collector.svg" alt="Badge Collector" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Collector</h3>
+                        <p class="text-sm opacity-75">Collectionne plusieurs badges / événements actifs</p>
+                        <p class="text-xs text-blue-400">7 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-blue-400 h-2 rounded-full" data-range="7000-8499"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 10. Explorateur -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/explorateur.svg">
+                    <img src="badges/explorateur.svg" alt="Badge Explorateur" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Explorateur</h3>
+                        <p class="text-sm opacity-75">Explore les communautés, musiques, vidéos, profils…</p>
+                        <p class="text-xs text-blue-400">8 500 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-emerald-500 h-2 rounded-full" data-range="8500-9999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 11. Star -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/star.svg">
+                    <img src="badges/star.svg" alt="Badge Star" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Star</h3>
+                        <p class="text-sm opacity-75">Popularité (+1k abonnés, posts massivement likés)</p>
+                        <p class="text-xs text-blue-400">10 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-cyan-500 h-2 rounded-full" data-range="10000-11999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 12. Or -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/or.svg">
+                    <img src="badges/or.svg" alt="Badge Or" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Or</h3>
+                        <p class="text-sm opacity-75">Contribution majeure et régulière</p>
+                        <p class="text-xs text-blue-400">12 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-amber-400 h-2 rounded-full" data-range="12000-14499"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 13. Platine -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/platine.svg">
+                    <img src="badges/platine.svg" alt="Badge Platine" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Platine</h3>
+                        <p class="text-sm opacity-75">Créateurs/artistes très suivis et actifs</p>
+                        <p class="text-xs text-blue-400">14 500 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-slate-300 h-2 rounded-full" data-range="14500-16999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 14. Diamant -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/diamant.svg">
+                    <img src="badges/diamant.svg" alt="Badge Diamant" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Diamant</h3>
+                        <p class="text-sm opacity-75">Activité exceptionnelle ou grande influence</p>
+                        <p class="text-xs text-blue-400">17 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-sky-300 h-2 rounded-full" data-range="17000-19999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 15. Ambassadeur -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/Ambassadeur.svg">
+                    <img src="badges/Ambassadeur.svg" alt="Badge Ambassadeur" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Ambassadeur</h3>
+                        <p class="text-sm opacity-75">Participe à la croissance d’ECHOES (invites, représentation)</p>
+                        <p class="text-xs text-blue-400">20 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-fuchsia-400 h-2 rounded-full" data-range="20000-24999"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 16. Echoes -->
+                <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/echoes.svg">
+                    <img src="badges/echoes.svg" alt="Badge Echoes" class="w-12 h-12">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">Echoes</h3>
+                        <p class="text-sm opacity-75">Badge ultime: identité de l’app, réservé à l’élite</p>
+                        <p class="text-xs text-blue-400">25 000 points</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                            <div class="progress-fill bg-rose-400 h-2 rounded-full" data-range="25000+"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/vérifié.svg">
+        <img src="badges/verify-group.svg" alt="Badge Vérifié" class="w-12 h-12">
+        <div class="flex-1">
+            <h3 class="font-semibold">Vérifié</h3>
+            <p class="text-sm opacity-75">compte de societé verifié,  ce badge est une reconaissance d l'authenticité d'un compte de société </p>
+            <p class="text-xs text-blue-400">pro</p>
+        </div>
+        <div class="text-right">
+            <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                <div class="progress-fill bg-indigo-500 h-2 rounded-full" data-range="3000-3999"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="badge-preview glass-card rounded-lg p-4 flex items-center space-x-4" data-badge="badges/vérifié.svg">
+        <img src="badges/verify-person.svg" alt="Badge Vérifié" class="w-12 h-12">
+        <div class="flex-1">
+            <h3 class="font-semibold">Vérifié</h3>
+            <p class="text-sm opacity-75">compte personnel verifié,  ce badge est une reconaissance d l'authenticité d'un compte personnel </p>
+            <p class="text-xs text-blue-400">pro</p>
+        </div>
+        <div class="text-right">
+            <div class="progress-bar bg-gray-700 rounded-full h-2 w-32">
+                <div class="progress-fill bg-indigo-500 h-2 rounded-full" data-range="3000-3999"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getPoints, addPoints, getBadge } from './points.js';
+
+        // Nouveau référentiel de badges + paliers
+        const BADGES = [
+            { key: 'novice',      name: 'Novice',      points: 0,     icon: 'badges/novice.svg',      desc: 'Le premier badge qu’un utilisateur obtient en rejoignant la plateforme.' },
+            { key: 'new',         name: 'New',         points: 500,   icon: 'badges/new.svg',         desc: 'Premier contenu ou interaction.' },
+            { key: 'first',       name: 'First',       points: 1000,  icon: 'badges/first.svg',       desc: 'Première action marquante (post, vidéo, audio).' },
+            { key: 'step',        name: 'Step',        points: 1500,  icon: 'badges/step.svg',        desc: 'Premiers progrès: atteindre un petit objectif (ex: 5 posts).' },
+            { key: 'calme',       name: 'Calme',       points: 2000,  icon: 'badges/calme.svg',       desc: 'Participation active à la page bien-être (calm.html).' },
+            { key: 'verifie',     name: 'Vérifié',     points: 3000,  icon: 'badges/vérifié.svg',     desc: 'Compte authentifié ou créateur/artiste reconnu.' },
+            { key: 'vision',      name: 'Vision',      points: 4000,  icon: 'badges/vision.svg',      desc: 'Contenus inspirants, motivants ou créatifs qui engagent.' },
+            { key: 'rare',        name: 'Rare',        points: 5500,  icon: 'badges/rare.svg',        desc: 'Événements uniques ou performance particulière.' },
+            { key: 'collector',   name: 'Collector',   points: 7000,  icon: 'badges/collector.svg',   desc: 'Collectionne plusieurs badges ou participe aux événements.' },
+            { key: 'explorateur', name: 'Explorateur', points: 8500,  icon: 'badges/explorateur.svg', desc: 'Parcourt beaucoup la plateforme (communautés, musiques, vidéos...).' },
+            { key: 'star',        name: 'Star',        points: 10000, icon: 'badges/star.svg',        desc: 'Utilisateur populaire, posts massivement likés.' },
+            { key: 'or',          name: 'Or',          points: 12000, icon: 'badges/or.svg',          desc: 'Contribution majeure et régulière.' },
+            { key: 'platine',     name: 'Platine',     points: 14500, icon: 'badges/platine.svg',     desc: 'Créateurs/artistes très suivis ou membres très actifs.' },
+            { key: 'diamant',     name: 'Diamant',     points: 17000, icon: 'badges/diamant.svg',     desc: 'Un des badges les plus rares pour activité exceptionnelle.' },
+            { key: 'ambassadeur', name: 'Ambassadeur', points: 20000, icon: 'badges/Ambassadeur.svg', desc: 'Participe à la croissance d’ECHOES (invites, représentation).' },
+            { key: 'echoes',      name: 'Echoes',      points: 25000, icon: 'badges/echoes.svg',      desc: 'Badge ultime, identité de l’app, réservé à l’élite ou créateurs officiels.' }
+        ];
+
+        // Détermine le badge courant selon les points
+        function computeBadgeInfo(points) {
+            let current = BADGES[0];
+            for (const b of BADGES) {
+                if (points >= b.points) current = b; else break;
+            }
+            return current;
+        }
+
+        // Simulate different actions
+        window.simulateAction = function(action) {
+            switch(action) {
+                case 'like':    addPoints(1); break;
+                case 'comment': addPoints(2); break;
+                case 'listen':  addPoints(2); break;
+                case 'watch':   addPoints(2); break;
+                case 'message': addPoints(1); break;
+            }
+            updateDisplay();
+        };
+
+        // Add custom points
+        window.addCustomPoints = function() {
+            addPoints(100);
+            updateDisplay();
+        };
+
+        // Reset points
+        window.resetPoints = function() {
+            // Si un store central gère les points, on émet un évènement
+            document.dispatchEvent(new CustomEvent('resetPointsRequested'));
+            // Fallback minimal: informer les observateurs de mettre à jour
+            document.dispatchEvent(new CustomEvent('pointsChanged'));
+            updateDisplay();
+        };
+
+        // Test notification
+        window.testNotification = function() {
+            if (window.badgeNotificationSystem) {
+                window.badgeNotificationSystem.triggerTestNotification();
+            }
+        };
+
+        // Update display
+        function updateDisplay() {
+            const points = getPoints();
+            const current = computeBadgeInfo(points);
+
+            // Statut actuel
+            document.getElementById('current-points').textContent = `${points} points`;
+            document.getElementById('current-badge-img').src = current.icon;
+            document.getElementById('current-badge-name').textContent = current.name;
+            document.getElementById('current-badge-description').textContent = current.desc;
+
+            // Progress bars + highlight
+            updateProgressBars(points);
+            highlightCurrentBadge(current.icon);
+        }
+
+        // Progress bars (générique via data-range="a-b" ou "a+")
+        function updateProgressBars(points) {
+            document.querySelectorAll('.progress-fill').forEach(fill => {
+                const range = String(fill.dataset.range || '').trim();
+                let pct = 0;
+                if (!range) { fill.style.width = '0%'; return; }
+
+                if (range.endsWith('+')) {
+                    const min = parseInt(range.slice(0, -1), 10) || 0;
+                    pct = points >= min ? 100 : (points / min) * 100;
+                } else if (range.includes('-')) {
+                    const [aStr, bStr] = range.split('-');
+                    const a = parseInt(aStr, 10) || 0;
+                    const b = parseInt(bStr, 10) || a;
+                    if (points <= a) pct = Math.max(0, Math.min(100, ((points - a) / Math.max(1, (b - a))) * 100));
+                    else if (points >= b) pct = 100;
+                    else pct = ((points - a) / (b - a)) * 100;
+                }
+                fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+            });
+        }
+
+        // Highlight current badge
+        function highlightCurrentBadge(badgeIconPath) {
+            document.querySelectorAll('.badge-preview').forEach(preview => {
+                preview.classList.remove('current-badge');
+                if (preview.dataset.badge === badgeIconPath) {
+                    preview.classList.add('current-badge');
+                }
+            });
+        }
+
+        // Initialize display
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+            updateDisplay();
+        });
+
+        // Listen for points changes
+        document.addEventListener('pointsChanged', updateDisplay);
+    </script>
+    <script src="background-init.js"></script>
+</body>
+</html>
