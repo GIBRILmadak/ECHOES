@@ -74,7 +74,7 @@
         try {
             const { data: posts, error } = await supabase
                 .from('posts')
-                .select('*, author:profiles(id, full_name, username, avatar_url, thought, badge)')
+                .select('*, author:profiles(id, full_name, username, avatar_url, thought, badge), tags')
                 .order('created_at', { ascending: false })
                 .limit(limit);
             if (error) throw error;
@@ -85,7 +85,7 @@
             // Fallback: charger sans jointure pour éviter de casser le fil
             const { data: postsNoJoin, error: err2 } = await supabase
                 .from('posts')
-                .select('id, author_id, content, image_url, video_url, audio_url, image_description, created_at')
+                .select('id, author_id, content, image_url, video_url, audio_url, image_description, created_at, tags')
                 .order('created_at', { ascending: false })
                 .limit(limit);
             if (err2) {
@@ -103,7 +103,7 @@
         try {
             const { data: posts, error } = await supabase
                 .from('posts')
-                .select('id, content, image_url, video_url, audio_url, image_description, created_at, author:profiles(id, full_name, username, avatar_url, thought, badge)')
+                .select('id, content, image_url, video_url, audio_url, image_description, created_at, tags, author:profiles(id, full_name, username, avatar_url, thought, badge)')
                 .eq('author_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(limit);
@@ -113,7 +113,7 @@
             console.warn('[DEBUG loadPostsByUser] Join failed, retrying without profiles join. Error:', err);
             const { data: postsNoJoin, error: err2 } = await supabase
                 .from('posts')
-                .select('id, author_id, content, image_url, video_url, audio_url, image_description, created_at')
+                .select('id, author_id, content, image_url, video_url, audio_url, image_description, created_at, tags')
                 .eq('author_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(limit);
@@ -123,7 +123,7 @@
     }
 
     // Créer un nouveau post
-    async function createPost(content, mediaFile = null, mediaType = null, imageDescription = null){
+    async function createPost(content, mediaFile = null, mediaType = null, imageDescription = null, tags = null){
         const supabase = await getClient();
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -163,7 +163,8 @@
             image_url: mediaType === 'image' ? mediaUrl : null,
             video_url: mediaType === 'video' ? mediaUrl : null,
             audio_url: mediaType === 'audio' ? mediaUrl : null,
-            image_description: (mediaType === 'image' && imageDescription) ? imageDescription : null
+            image_description: (mediaType === 'image' && imageDescription) ? imageDescription : null,
+            tags: tags ? tags.split(/\s+/).filter(t => t.trim()) : null
         };
 
         const { data, error } = await supabase
@@ -295,6 +296,8 @@
             try { return Boolean(window.__currentUserId) && (authorId === window.__currentUserId); } catch(e) { return false; }
         })();
 
+        const tagsHtml = post.tags && post.tags.length > 0 ? `<div class="flex flex-wrap gap-1 mb-3">${post.tags.map(tag => `<span class="text-xs px-2 py-1 bg-dark-secondary bg-opacity-30 rounded-full">#${escapeHtml(tag)}</span>`).join('')}</div>` : '';
+
         card.innerHTML = `
             <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center space-x-3">
@@ -313,6 +316,7 @@
             </div>
             ${(!post.image_url && post.content) ? `<p class="mb-4">${escapeHtml(post.content)}</p>` : ''}
             ${mediaHtml}
+            ${tagsHtml}
             <div class="flex justify-between text-sm">
                 <div class="flex items-center space-x-2">
                     <button class="flex items-center space-x-1 hover:text-red-400 transition-colors ${likedClass}" data-action="like" data-post-id="${post.id}">
@@ -903,3 +907,4 @@
     };
 
 })();
+
