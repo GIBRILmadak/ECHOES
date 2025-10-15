@@ -114,8 +114,13 @@
 
         const tagsHtml = post.tags && post.tags.length > 0 ? `<div class="flex space-x-2">${post.tags.map(tag => `<span class="text-xs px-2 py-1 bg-dark-secondary bg-opacity-30 rounded-full">#${escapeHtml(tag)}</span>`).join('')}</div>` : '';
 
+        // Vérifier s'il y a une couverture sauvegardée
+        const COVER_KEY_PREFIX = 'forum_cover_';
+        const savedCover = localStorage.getItem(COVER_KEY_PREFIX + post.id);
+        const coverStyle = savedCover ? `background-image: url('${savedCover}')` : (post.image_url ? `background-image: url('${post.image_url}')` : '');
+
         card.innerHTML = `
-            <div class="discussion-cover" style="background-image: url('${post.image_url || 'http://static.photos/people/cover-default-1'}');">
+            <div id="cover-${post.id}" class="discussion-cover" style="${coverStyle}">
                 <div class="cover-overlay">
                     <button type="button" class="change-cover-btn" data-target="${post.id}">
                         <i data-feather="image" class="w-4 h-4"></i>
@@ -124,7 +129,7 @@
                         <i data-feather="refresh-cw" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <input type="file" accept="image/*" id="file-${post.id}" class="hidden file-input" data-target="${post.id}">
+                <input type="file" accept="image/*" class="hidden file-input" data-target="${post.id}">
             </div>
             <div class="p-4 discussion-card-body flex-1">
                 <div class="flex items-start space-x-3 mb-3">
@@ -206,6 +211,9 @@
                 if (window.feather) feather.replace();
                 if (window.AOS) AOS.refresh();
 
+                // Réinitialiser les contrôles de couverture après le rendu
+                initCoverControls();
+
             } catch(e) {
                 console.error('Erreur chargement forum:', e);
                 if (popularGrid) popularGrid.innerHTML = '<p class="text-center opacity-75">Erreur de chargement</p>';
@@ -257,6 +265,9 @@
                     if (window.feather) feather.replace();
                     if (window.AOS) AOS.refresh();
 
+                    // Réinitialiser les contrôles de couverture après le filtrage
+                    initCoverControls();
+
                 } catch(e) {
                     console.error('Erreur filtrage forum:', e);
                 }
@@ -264,12 +275,81 @@
         });
     }
 
-    // Exposer les fonctions nécessaires globalement
+    // Fonction pour initialiser les contrôles de couverture
+    function initCoverControls() {
+        const COVER_KEY_PREFIX = 'forum_cover_';
+
+        // Appliquer les couvertures sauvegardées
+        function loadSavedCovers() {
+            document.querySelectorAll('[data-discussion-id]').forEach(card => {
+                const id = card.getAttribute('data-discussion-id');
+                const coverEl = card.querySelector('.discussion-cover');
+                if (!coverEl) return;
+                const saved = localStorage.getItem(COVER_KEY_PREFIX + id);
+                if (saved) {
+                    coverEl.style.backgroundImage = `url('${saved}')`;
+                }
+            });
+        }
+
+        // Gérer le changement de fichier
+        function handleFileInput(file, id) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                const coverEl = document.querySelector(`#cover-${id}`);
+                if (coverEl) {
+                    coverEl.style.backgroundImage = `url('${dataUrl}')`;
+                    localStorage.setItem(COVER_KEY_PREFIX + id, dataUrl);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Connecter les boutons et inputs
+        function wireCoverControls() {
+            // Ouvrir le sélecteur de fichier
+            document.querySelectorAll('.change-cover-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-target');
+                    const input = document.querySelector(`.file-input[data-target="${id}"]`);
+                    if (input) input.click();
+                });
+            });
+
+            // Bouton de réinitialisation
+            document.querySelectorAll('.change-reset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-target');
+                    localStorage.removeItem(COVER_KEY_PREFIX + id);
+                    const coverEl = document.querySelector(`#cover-${id}`);
+                    if (coverEl) {
+                        coverEl.style.backgroundImage = '';
+                    }
+                });
+            });
+
+            // Changement de fichier
+            document.querySelectorAll('.file-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    const id = input.getAttribute('data-target');
+                    if (file && id) handleFileInput(file, id);
+                    input.value = '';
+                });
+            });
+        }
+
+        loadSavedCovers();
+        wireCoverControls();
+    }
+
+    // Exposer les fonctions globalement
     window.echoesForum = {
         initForumUI,
         loadForumPosts,
         loadForumPostsByTag,
-        renderForumDiscussion
+        renderForumDiscussion,
+        initCoverControls
     };
-
 })();
