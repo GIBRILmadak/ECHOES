@@ -285,10 +285,10 @@
                 newVideos.forEach(video => loadedVideoIds.add(video.id));
 
                 // Append new videos
-                newVideos.forEach(video => {
-                    const videoEl = renderVideoPost(video);
+                for (const video of newVideos) {
+                    const videoEl = await renderVideoPost(video);
                     feed.appendChild(videoEl);
-                });
+                }
 
                 currentPage++;
 
@@ -320,10 +320,16 @@
 
                 // Clear existing content and add new videos
                 feed.innerHTML = '';
-                videos.forEach(video => {
-                    const videoEl = renderVideoPost(video);
+
+                if (videos.length === 0) {
+                    feed.innerHTML = '<div class="text-center text-white p-8">Aucune vidéo disponible pour le moment.</div>';
+                    return;
+                }
+
+                for (const video of videos) {
+                    const videoEl = await renderVideoPost(video);
                     feed.appendChild(videoEl);
-                });
+                }
 
                 // Setup video observer
                 setupVideoObserver();
