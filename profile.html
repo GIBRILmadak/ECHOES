@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Profil</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    <link rel="shortcut icon" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="supabase-client.js"></script>
+    <script defer src="auth-guard.js"></script>
+    <script defer src="auth.js"></script>
+    <script defer src="special-emails.js"></script>
+    <script defer src="points.js"></script>
+    <script defer src="badge-injector.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .profile-header { /* ajuste l'espace entre nom et stats */
+            margin-top: -6rem !important; /* restaure un chevauchement net de la bannière */
+            margin-bottom: 0.30rem; /* réduit l'écart visuel */
+        }
+
+        @media (max-width: 640px) {
+            .profile-header {
+                margin-top: 0 !important; /* aucun chevauchement sur mobile */
+            }
+        }
+        .stat-number {
+            font-weight: 800; /* chiffre plus épais */
+            font-size: 1.125rem;
+        }
+        .stat-label {
+            font-weight: 400; /* label plus fin */
+            font-size: 0.75rem;
+        }
+        .stat-item i { /* petite icône à côté du chiffre */
+            vertical-align: middle;
+            margin-right: 0.35rem;
+        }
+        .badge-label {
+            font-size: 0.7rem;
+            margin-top: 0.35rem;
+            color: rgba(255,255,255,0.8);
+        }
+        .badge.rare > div:first-child { /* neutralisé: pas de mise en avant */
+            box-shadow: none;
+            transform: none;
+        }
+        .badge > div:first-child {
+            background: transparent !important;
+        }
+        .post-media {
+            object-fit: cover;
+            max-height: 15rem; /* taille uniforme */
+            width: 100%;
+        }
+        .tabs { margin-bottom: 0.75rem; }
+        .tab-btn { transition: all 160ms ease; }
+        .tab-btn[aria-pressed="true"] {
+            box-shadow: 0 6px 18px rgba(59,130,246,0.12);
+            transform: translateY(-2px);
+        }
+
+        */
+        :root {
+            --main-text: #000000;            /* texte par défaut (thème clair) */
+            --muted-text: rgba(0,0,0,0.55);  /* texte atténué par défaut */
+        }
+        html.dark {
+            --main-text: #ffffff;            /* texte en thème sombre */
+            --muted-text: rgba(255,255,255,0.78);
+        }
+
+        body {
+            color: var(--main-text) !important;
+        }
+        /* Utilitaires courants qui affichent du texte atténué/probablement en .opacity-75 */
+        .opacity-75 {
+            color: var(--muted-text) !important;
+        }
+        /* Assurer que les classes text-white/text-black suivent la variable principale */
+        .text-white, .text-black {
+            color: var(--main-text) !important;
+        }
+        /* Si des SVG/icônes utilisent currentColor, elles suivront automatiquement la variable */
+        svg {
+            color: inherit;
+        }
+
+        /* === Nouveaux styles pour mise en valeur du bloc profil/bannière === */
+        .profile-banner {
+            /* hauteur augmentée pour plus d'impact */
+            height: 12rem; /* équiv. h-48 */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        }
+        /* Image overlay pour les GIFs animés en bannière */
+        .profile-banner .banner-image {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            pointer-events: none;
+        }
+        /* Ajustements du bloc photo/nom/pseudo */
+        .profile-block { /* regroupe photo/nom/pseudo et ajoute séparation nette des stats */
+            padding-top: 0.75rem; /* léger espace sous la bannière, laisse l'avatar empiéter */
+            padding-bottom: 1rem;
+        }
+        .profile-avatar {
+            width: 7rem; /* w-28 */
+            height: 7rem;
+            object-fit: cover;
+            border-radius: 50%; /* Ensure perfect circle */
+            flex-shrink: 0; /* Prevent shrinking */
+            margin-top: -0.75rem; /* encastrement par défaut (légèrement plus haut) */
+        }
+        /* Increase overlap on small screens */
+        @media (max-width: 639px) {
+            .profile-avatar { margin-top: -2.25rem !important; }
+        }
+        /* Slight overlap of avatar into the banner on larger screens */
+        @media (min-width: 640px) {
+            .profile-avatar {
+                margin-top: -1.75rem !important; /* encastrement légèrement plus haut sur ≥640px */
+                position: relative;
+                z-index: 2; /* s'assure que l'avatar passe au-dessus du bord de la bannière */
+            }
+        }
+        .profile-name {
+            font-size: 1.5rem; /* text-3xl environ */
+            font-weight: 800;
+            line-height: 1.05;
+        }
+        .profile-handle {
+            font-size: 0.9rem;             /* légèrement plus petit */
+            font-weight: 500;              /* moins gras */
+            color: #B0B0B0 !important;     /* teinte gris doux demandée */
+            text-shadow: none;             /* conserve un rendu net pour la nouvelle couleur */
+            background: rgba(255,255,255,0.02); /* petit fond pour détacher du background */
+            padding: 0.08rem 0.28rem;
+            border-radius: 0.25rem;
+            margin-top: 0.1rem;            /* réduit l'écart sous le nom */
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            vertical-align: baseline;      /* align with text baseline */
+            line-height: 1.2;              /* consistent line height */
+        }
+        .thought-display-style {
+            font-style: italic;
+            color: var(--muted-text);
+            text-align: center;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+        }
+        /* style du bouton de modification du pseudo */
+        .edit-handle-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 0.18rem 0.45rem;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            color: var(--main-text);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            vertical-align: baseline;      /* align with text baseline */
+            line-height: 1.2;              /* consistent line height */
+        }
+
+        /* Espace clair entre le groupe profil et les stats */
+        .profile-separator {
+            margin-top: 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            padding-top: 0.75rem;
+        }
+
+        /* Ensure a pleasant max width on large desktop screens without breaking Tailwind setup */
+        /* Conteneur principal : largeur par défaut un peu réduite */
+        .content-max {
+            max-width: 1000px; /* largeur par défaut (affecte grand écrans) */
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* Pour écrans de bureau larges, resserrer encore la largeur pour meilleure lisibilité */
+        @media (min-width: 1024px) {
+            .content-max {
+                max-width: 900px; /* largeur cible pour écrans de bureau */
+            }
+        }
+
+        /* === Navigation flottante sans animation === */
+        .floating-nav {
+            z-index: 9999; /* toujours au-dessus du contenu */
+            transition: none;
+            will-change: auto;
+            pointer-events: auto; /* s'assurer qu'il reçoit les interactions */
+        }
+        .floating-nav:hover,
+        .floating-nav:focus-within {
+            transform: translateX(-50%); /* aucun lift au survol */
+            box-shadow: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .floating-nav {
+                transition: none;
+            }
+            .floating-nav:hover,
+            .floating-nav:focus-within {
+                transform: translateX(-50%);
+                box-shadow: none;
+            }
+        }
+
+        /* === Background selector: horizontal thumbnail rail per theme === */
+        /* Show the selector inline as a horizontal scroller and keep thumbnail sizes consistent */
+        #background-selector,
+        #settings-theme-bg-row,
+        #backgrounds-section-row {
+            display: block;
+            width: 100%;
+            overflow-x: auto; /* horizontal scrolling for many thumbnails */
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.5rem; /* small gutter for scrollbar */
+            /* Allow right-to-left scrolling so users can scroll de droite à gauche */
+            direction: rtl;
+        }
+        /* Force the JS-created theme rows to be horizontal rails */
+        #background-selector .flex,
+        #settings-theme-bg-row,
+        #backgrounds-section-row {
+            display: flex !important;
+            align-items: center;
+            gap: 0.5rem; /* consistent spacing between thumbnails */
+            padding: 0.25rem 0;
+        }
+        /* Uniform, larger clickable targets for thumbnails (applies to both inline selector and settings drawer) */
+        #background-selector button,
+        #settings-theme-bg-row button,
+        #backgrounds-section-row button {
+            width: 96px !important;
+            height: 56px !important;
+            min-width: 96px !important;
+            border-radius: 0.5rem;
+            background-size: cover !important;
+            background-position: center center !important;
+            flex: 0 0 auto; /* prevent shrinking in the rail */
+            border: 2px solid transparent;
+            background-repeat: no-repeat !important;
+        }
+        /* Keep the visual layout of the thumbnail content left-to-right even when the rail is RTL */
+        #settings-theme-bg-row button,
+        #backgrounds-section-row button { direction: ltr; }
+        /* Hide the opposite theme group via JS remains intact; no change needed here */
+    /* Cacher par défaut tous les contrôles réservés au propriétaire du profil */
+        [data-visible="auth"] { display: none; }
+    </style>
+</head>
+<body class="min-h-screen text-white dark:text-dark-text">
+    <div id="vanta-bg" class="fixed inset-0 -z-10 bg-cover bg-center"></div>
+    <!-- Navigation -->
+    <nav class="glass-card floating-nav fixed bottom-4 left-1/2 transform -translate-x-1/2 rounded-full px-4 sm:px-6 py-3 sm:py-3 flex items-center justify-center space-x-3 sm:space-x-8 z-50" role="navigation" aria-label="Navigation principale">
+        <a href="index.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="home" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="videos.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="video" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+                <a href="forum.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="message-square" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="messages.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="mail" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="calm.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="book" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        
+    </nav>
+
+    <!-- Main Content -->
+    <div id="authenticated-content" class="container mx-auto px-4 pt-8 pb-24 content-max">
+        <!-- Profile Header -->
+        <div class="glass-card rounded-2xl overflow-hidden mb-6">
+            <!-- Banner -->
+            <div id="profile-banner" class="profile-banner relative" data-placeholder="images/banner.jpg" style="background-image: url('images/banner.jpg'); background-size: cover; background-position: center;">
+                <img id="profile-banner-image" class="banner-image" src="" alt="Bannière" style="display:none;" />
+                <button id="banner-edit-btn" class="absolute top-3 right-3 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70 transition-all" data-visible="auth">
+                    <i data-feather="edit-2" class="w-4 h-4"></i>
+                </button>
+                <input type="file" id="banner-input" accept="image/*" class="hidden">
+            </div>
+            
+            <!-- Profile Info -->
+            <div class="p-6 pt-0">
+                <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-24 profile-header profile-block">
+                    <div class="flex items-start sm:items-end">
+                        <div class="relative">
+                            <img id="profile-avatar" src="images/default-profil.jpg" data-placeholder="images/default-profil.jpg" alt="Profile" class="profile-avatar rounded-full border-4 border-dark-primary">
+                            <button id="avatar-edit-btn" class="absolute bottom-0 right-0 bg-dark-accent p-1 rounded-full hover:bg-opacity-90 transition-all" data-visible="auth">
+                                <i data-feather="camera" class="w-4 h-4"></i>
+                            </button>
+                            <input type="file" id="avatar-input" accept="image/*" class="hidden">
+                        </div>
+                        <div class="ml-4 mb-2">
+                             <h1 id="profile-name" class="profile-name flex items-center gap-2">Utilisateur</h1>
+                             <div class="flex items-baseline space-x-2 mt-1">
+                                 <p class="profile-handle" id="profile-handle">@utilisateur</p>
+                                 <button id="edit-handle-btn" class="edit-handle-btn" aria-label="Modifier le pseudo" title="Modifier le pseudo" data-visible="auth">
+                                     <i data-feather="edit-2" class="w-4 h-4"></i>
+                                 </button>
+                             </div>
+                         </div>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2 w-full sm:w-auto flex-wrap sm:justify-end">
+                        <button id="message-btn" class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 transition-all flex items-center gap-2" style="display:none;">
+                            <i data-feather="mail" class="w-4 h-4"></i>
+                            <span>Message</span>
+                        </button>
+                        <button id="follow-btn" class="px-6 py-2 rounded-full bg-dark-accent text-white font-semibold hover:bg-opacity-90 transition-all" style="display:none;">
+                            S'abonner
+                        </button>
+                    </div>
+                </div>
+                <p id="thought-display" class="thought-display-style">Rien à partager pour le moment.</p>
+                <!-- Stats -->
+                <div class="flex justify-around py-3 border-y border-dark-secondary profile-separator">
+                    <div class="text-center stat-item">
+                        <div class="text-lg stat-number flex items-center justify-center">
+                            <i data-feather="star" class="w-4 h-4"></i><span id="stat-points">0</span>
+                        </div>
+                        <div class="text-xs opacity-75 stat-label">Points</div>
+                    </div>
+                    <div class="text-center stat-item">
+                        <div class="text-lg stat-number flex items-center justify-center">
+                            <i data-feather="user" class="w-4 h-4"></i><span id="stat-followers">0</span>
+                        </div>
+                        <div class="text-xs opacity-75 stat-label">Abonnés</div>
+                    </div>
+                    <div class="text-center stat-item">
+                        <div class="text-lg stat-number flex items-center justify-center">
+                            <i data-feather="users" class="w-4 h-4"></i><span id="stat-following">0</span>
+                        </div>
+                        <div class="text-xs opacity-75 stat-label">Abonnements</div>
+                    </div>
+                </div>
+
+                <p id="bio-display" class="mt-4 text-base font-bold text-left">Aucune bio pour le moment.</p>
+                <!-- Bio Editor (hidden by default) -->
+                <div id="bio-editor" class="mt-3" style="display:none;">
+                    <label for="bio-input" class="sr-only">Bio</label>
+                    <textarea id="bio-input" rows="4" maxlength="500" class="w-full p-3 rounded-lg bg-opacity-5 glass-card" placeholder="Écrivez votre bio ici..."></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="text-sm opacity-75"><span id="bio-count">0</span> / 500</div>
+                        <div id="bio-update-actions" class="flex gap-2" style="display:flex;">
+                            <button id="bio-cancel" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30">Annuler</button>
+                            <button id="bio-save" class="px-3 py-1 rounded-full bg-dark-accent text-white">Enregistrer</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thought Editor (hidden by default) -->
+                <div id="thought-editor" class="mt-3" style="display:none;">
+                    <label for="thought-input" class="sr-only">Pensée du moment</label>
+                    <textarea id="thought-input" rows="3" maxlength="300" class="w-full p-3 rounded-lg bg-opacity-5 glass-card" placeholder="Votre pensée du moment..."></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="text-sm opacity-75"><span id="thought-count">0</span> / 300</div>
+                        <div id="thought-update-actions" class="flex gap-2" style="display:flex;">
+                            <button id="thought-cancel" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30">Annuler</button>
+                            <button id="thought-save" class="px-3 py-1 rounded-full bg-dark-accent text-white">Publier</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Actions profil -->
+        <div class="flex justify-end gap-4 mb-6 flex-wrap" data-visible="auth">
+            <button id="bio-button" class="glass-card rounded-full px-5 py-3 flex items-center gap-2 bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 transition-all" data-visible="auth" style="display:none;">
+                <i data-feather="user" class="w-5 h-5"></i>
+                <span class="text-sm font-semibold">Bio</span>
+            </button>
+            <button id="thought-button" class="glass-card rounded-full px-5 py-3 flex items-center gap-2 bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 transition-all" data-visible="auth" style="display:none;">
+                <i data-feather="message-circle" class="w-5 h-5"></i>
+                <span class="text-sm font-semibold">Pensée du moment</span>
+            </button>
+        </div>
+
+        <!-- Profile Tabs -->
+        <div id="profile-tabs" class="glass-card rounded-2xl p-4 mb-6" style="display: none;">
+            <div class="flex space-x-4 overflow-x-auto tabs" role="tablist" aria-label="Profile tabs">
+                <button class="px-4 py-2 rounded-full bg-dark-accent text-white whitespace-nowrap tab-btn" data-tab="posts" aria-pressed="true">Mes Posts</button>
+                <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 whitespace-nowrap tab-btn" data-tab="liked" aria-pressed="false">Vidéos Likées</button>
+                <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 whitespace-nowrap tab-btn" data-tab="podcasts" aria-pressed="false">Podcasts</button>
+                <button class="px-4 py-2 rounded-full bg-dark-secondary bg-opacity-30 whitespace-nowrap tab-btn" data-tab="activity" aria-pressed="false">Activité</button>
+            </div>
+        </div>
+
+        <!-- Actions profil -->
+        <div class="flex justify-end gap-4 mb-6 flex-wrap" data-visible="auth">
+            <button id="badges-button" class="glass-card rounded-full px-5 py-3 flex items-center gap-2 bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 transition-all" data-visible="auth">
+                <i data-feather="award" class="w-5 h-5"></i>
+                <span class="text-sm font-semibold">Badges</span>
+            </button>
+            <button id="settings-button" class="glass-card rounded-full px-5 py-3 flex items-center gap-2 bg-dark-secondary bg-opacity-30 hover:bg-opacity-50 transition-all" data-visible="auth">
+                <i data-feather="settings" class="w-5 h-5"></i>
+                <span class="text-sm font-semibold">Paramètres</span>
+            </button>
+        </div>
+
+        <!-- User Posts -->
+        <div id="user-posts" class="space-y-6">
+            <div class="glass-card rounded-2xl p-6 text-center">
+                <p class="text-sm opacity-75">Aucun post pour le moment.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges Modal -->
+    <div id="badges-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-filter backdrop-blur-sm flex items-center justify-center z-50" style="display: none;">
+        <div class="glass-card rounded-2xl p-6 max-w-lg w-full m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Mes Badges</h2>
+                <button id="badges-modal-close" class="p-1 rounded-full hover:bg-dark-secondary">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="badges-modal-content" class="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                <!-- Contenu des badges sera injecté ici dynamiquement -->
+                 <div class="badge" role="button" tabindex="0" aria-label="Badge Novice - Le premier badge obtenu en rejoignant la plateforme - 0-499 points">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center p-1">
+                        <img src="badges/novice.svg" alt="Badge Novice" class="w-14 h-14 rounded-full">
+                    </div>
+                    <div class="badge-label text-center">Novice</div>
+                </div>
+                <div class="badge" role="button" tabindex="0" aria-label="Badge New - Premier contenu ou interaction - 500-999 points">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center p-1">
+                        <img src="badges/new.svg" alt="Badge New" class="w-14 h-14 rounded-full">
+                    </div>
+                    <div class="badge-label text-center">New</div>
+                </div>
+                 <div class="badge" role="button" tabindex="0" aria-label="Badge First - Première action marquante - 1 000-1 499 points">
+                    <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center p-1">
+                        <img src="badges/first.svg" alt="Badge First" class="w-14 h-14 rounded-full">
+                    </div>
+                    <div class="badge-label text-center">First</div>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <a href="badge-demo.html" class="text-sm text-blue-400 hover:underline">Voir la galerie de tous les badges</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Listen for points changes to update display
+        document.addEventListener('pointsChanged', function(event) {
+            const detail = event.detail;
+            const pointsEl = document.getElementById('stat-points');
+            if (pointsEl) {
+                pointsEl.textContent = detail.newPoints;
+            }
+            // Update badge display if changed
+            if (detail.newBadge && detail.newBadge !== detail.previousBadge) {
+                const updateBadge = (el) => {
+                    if (!el) return;
+                    // Remove old badge img if any
+                    const oldImg = el.querySelector('img');
+                    if (oldImg) oldImg.remove();
+                    // Add new badge
+                    const img = document.createElement('img');
+                    img.src = `badges/${detail.newBadge}.svg`;
+                    img.alt = 'Badge';
+                    img.className = el === document.getElementById('profile-name') ? 'w-5 h-5 inline-block ml-2 align-middle rounded-full' : 'w-4 h-4 inline-block ml-2 align-middle rounded-full';
+                    el.appendChild(img);
+                };
+                updateBadge(document.getElementById('profile-name'));
+                updateBadge(document.getElementById('profile-handle'));
+            }
+        });
+
+        // --- Chargement dynamique du profil ---
+        async function loadUserProfile() {
+            const url = new URL(window.location.href);
+            const paramId = url.searchParams.get('id');
+            const supabase = await window.getSupabase();
+            const { data: { user } } = await supabase.auth.getUser();
+
+            // Persist and reuse a viewed profile id to survive refresh/navigation without query params
+            let storedViewId = null;
+            try { storedViewId = sessionStorage.getItem('viewingProfileId'); } catch (e) {}
+
+            // Priority: explicit URL id > current user id (if logged in) > stored viewing id
+            let targetUserId = null;
+            if (paramId) {
+                targetUserId = paramId;
+            } else if (user && user.id) {
+                targetUserId = user.id;
+            } else if (storedViewId) {
+                targetUserId = storedViewId;
+            }
+
+            if (!targetUserId) {
+                console.error('Aucun utilisateur à charger (ni via URL, ni connecté).');
+                // Optionnel: rediriger vers la page de connexion
+                // window.location.href = 'login.html';
+                return;
+            }
+
+            // Déterminer si c'est le propre profil AVANT de charger les données
+            const isOwnProfile = user && user.id === targetUserId;
+
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', targetUserId)
+                .single();
+
+            if (error) {
+                console.error('Erreur lors du chargement du profil:', error);
+                return;
+            }
+
+            // Mise à jour de l'interface avec les données du profil visité
+            const nameEl = document.getElementById('profile-name');
+            if (nameEl) {
+                // reset text and remove previous inline badge icons if any
+                nameEl.textContent = profile.full_name || 'Utilisateur';
+                // Ajouter l'icône de badge s'il est disponible
+                if (profile.badge) {
+                    const img = document.createElement('img');
+                    img.src = `badges/${profile.badge}.svg`;
+                    img.alt = 'Badge';
+                    img.className = 'w-5 h-5 inline-block ml-2 align-middle rounded-full';
+                    nameEl.appendChild(img);
+                }
+            }
+            const handleEl = document.getElementById('profile-handle');
+            if (handleEl) {
+                handleEl.textContent = profile.username ? `@${profile.username}` : '@utilisateur';
+                // Ajouter l'icône de badge s'il est disponible
+                if (profile.badge) {
+                    const img = document.createElement('img');
+                    img.src = `badges/${profile.badge}.svg`;
+                    img.alt = 'Badge';
+                    img.className = 'w-4 h-4 inline-block ml-2 align-middle rounded-full';
+                    handleEl.appendChild(img);
+                }
+            }
+            document.getElementById('profile-avatar').src = profile.avatar_url || 'images/default-profil.jpg';
+            document.getElementById('profile-banner').style.backgroundImage = `url(${profile.banner_url || 'images/banner.jpg'})`;
+            document.getElementById('stat-points').textContent = profile.points || 0;
+            document.getElementById('stat-posts').textContent = profile.posts_count || 0;
+            document.getElementById('stat-followers').textContent = profile.followers_count || 0;
+            document.getElementById('stat-following').textContent = profile.following_count || 0;
+            document.getElementById('bio-display').textContent = profile.bio || 'Aucune bio pour le moment.';
+            document.getElementById('thought-display').textContent = profile.thought || 'Rien à partager pour le moment.';
+
+            // Setup bio and thought inputs
+            const bioValue = profile.bio && profile.bio.length ? profile.bio : '';
+            const bioInputEl = document.getElementById('bio-input');
+            const bioCountEl = document.getElementById('bio-count');
+            const bioActionsEl = document.getElementById('bio-update-actions');
+            if (bioInputEl) bioInputEl.value = bioValue;
+            if (bioCountEl) bioCountEl.textContent = `${bioValue.length} / 500`;
+            if (bioActionsEl) bioActionsEl.style.display = isOwnProfile ? 'flex' : 'none';
+
+            const thoughtValue = profile.thought && profile.thought.length ? profile.thought : '';
+            const thoughtInputEl = document.getElementById('thought-input');
+            const thoughtCountEl = document.getElementById('thought-count');
+            const thoughtActionsEl = document.getElementById('thought-update-actions');
+            if (thoughtInputEl) thoughtInputEl.value = thoughtValue;
+            if (thoughtCountEl) thoughtCountEl.textContent = `${thoughtValue.length} / 300`;
+            if (thoughtActionsEl) thoughtActionsEl.style.display = isOwnProfile ? 'flex' : 'none';
+
+            document.body.dataset.ownProfile = isOwnProfile ? 'true' : 'false';
+
+            // Forcer visibilité des boutons et des onglets selon le profil
+            const badgesBtn = document.getElementById('badges-button');
+            const settingsBtn = document.getElementById('settings-button');
+            const tabsEl = document.getElementById('profile-tabs');
+            const userPostsEl = document.getElementById('user-posts');
+
+            // Si ce n'est pas le propre profil, cacher les onglets
+            if (!isOwnProfile) {
+                if (tabsEl) {
+                    tabsEl.style.display = 'none';
+                    tabsEl.style.visibility = 'hidden';
+                    tabsEl.style.pointerEvents = 'none';
+                }
+            } else {
+                // Montrer pour le profil actuel
+                if (tabsEl) tabsEl.style.display = '';
+            }
+
+            // Register user badge
+            if (profile.username && window.echoesPoints && window.registerUserBadge) {
+                const badgePath = window.echoesPoints.getBadgePath(profile.points || 0);
+                window.registerUserBadge(profile.username, badgePath);
+            }
+
+            // Check profile completion for own profile
+            if (window.echoesPoints && isOwnProfile) {
+                window.echoesPoints.checkProfileCompletion();
+            }
+
+            // Dispatch points changed event
+            document.dispatchEvent(new Event('pointsChanged'));
+            if (window.feather) feather.replace();
+
+            // Set flag for background handling when viewing other profile
+            if (!isOwnProfile) {
+                window.viewingOtherProfile = true;
+                window.viewingOtherProfileBg = profile.background;
+            }
+
+            // Gérer la visibilité des boutons d'édition
+            document.querySelectorAll('[data-visible="auth"]').forEach(el => {
+                el.style.display = isOwnProfile ? 'inline-flex' : 'none';
+            });
+
+            // Mémoriser l'ID du profil actuellement consulté pour robustesse au refresh
+            try { sessionStorage.setItem('viewingProfileId', String(targetUserId)); } catch (e) {}
+
+            // Bouton message: visible uniquement si on consulte un autre profil
+            const messageBtn = document.getElementById('message-btn');
+            if (messageBtn) {
+                if (!isOwnProfile) {
+                    messageBtn.style.display = '';
+                    messageBtn.onclick = () => {
+                        // La page messages.html gère déjà la création/recherche de conversation via le paramètre 'to'
+                        window.location.href = `messages.html?to=${encodeURIComponent(targetUserId)}`;
+                    };
+                } else {
+                    messageBtn.style.display = 'none';
+                }
+            }
+
+            // Appliquer l'arrière-plan de l'utilisateur consulté
+            if (profile.background) {
+                const bgElement = document.getElementById('vanta-bg');
+                if (bgElement) {
+                    // Sauvegarder l'arrière-plan actuel de l'utilisateur connecté
+                    if (isOwnProfile) {
+                        try {
+                            localStorage.removeItem('profileBgBackup');
+                        } catch (e) {}
+                    } else {
+                        // Sauvegarder l'arrière-plan actuel avant de changer
+                        const currentBg = localStorage.getItem('selectedBg');
+                        if (currentBg) {
+                            try {
+                                localStorage.setItem('profileBgBackup', currentBg);
+                            } catch (e) {}
+                        }
+                    }
+                    // Appliquer l'arrière-plan du profil consulté
+                    if (profile.background.startsWith('rgb')) {
+                        bgElement.style.backgroundColor = profile.background;
+                        bgElement.style.backgroundImage = 'none';
+                    } else {
+                        bgElement.style.backgroundImage = `url('${profile.background}')`;
+                        bgElement.style.backgroundColor = '';
+                    }
+                    // Pour que les modules d'arrière-plan (init/selector) prennent en compte
+                    // le fond du profil consulté, on positionne temporairement la
+                    // valeur `selectedBg` dans localStorage. Le handler `beforeunload`
+                    // restaure la valeur précédente depuis `profileBgBackup`.
+                    try {
+                        localStorage.setItem('selectedBg', profile.background);
+                    } catch (e) {}
+                }
+            }
+
+            // Le badge est déjà géré par badge-injector.js, pas besoin de le toucher ici.
+        }
+
+
+        // Initialize AOS and Feather Icons + Theme wiring via global-theme.js
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile(); // Charger le profil au démarrage
+
+            if (window.AOS) {
+                AOS.init({ duration: 800, easing: 'ease-in-out', once: true });
+            }
+            if (window.feather) {
+                feather.replace();
+            }
+
+
+            // --- Gestion de la modale des badges ---
+            const badgesButton = document.getElementById('badges-button');
+            const badgesModal = document.getElementById('badges-modal');
+            const badgesModalClose = document.getElementById('badges-modal-close');
+            const badgesModalContent = document.getElementById('badges-modal-content');
+
+            function loadAllBadges() {
+                // La constante BADGES_THRESHOLDS a été supprimée, nous utilisons donc une liste fixe.
+                const badgeNames = [
+                    'novice', 'new', 'first', 'step', 'calme', 'vérifié', 'vision', 
+                    'rare', 'collector', 'explorateur', 'star', 'or', 'platine', 'diamant', 
+                    'Ambassadeur', 'echoes'
+                ];
+
+                if (badgeNames.length > 0 && badgesModalContent) {
+                    badgesModalContent.innerHTML = ''; // Vider le contenu existant
+                    badgeNames.forEach(badgeName => {
+                        const badgeEl = document.createElement('div');
+                        badgeEl.className = 'badge text-center';
+                        badgeEl.innerHTML = `
+                            <div class="w-16 h-16 rounded-full flex items-center justify-center p-1 mx-auto">
+                                <img src="badges/${badgeName}.svg" alt="Badge ${badgeName}" class="w-14 h-14 rounded-full">
+                            </div>
+                            <div class="badge-label mt-2 capitalize">${badgeName.replace('_', ' ')}</div>
+                        `;
+                        badgesModalContent.appendChild(badgeEl);
+                    });
+                }
+            }
+
+            if (badgesButton && badgesModal) {
+                badgesButton.addEventListener('click', () => {
+                    loadAllBadges(); // Charger les badges à chaque ouverture
+                    badgesModal.style.display = 'flex';
+                    feather.replace(); // Pour afficher les icônes dans la modale
+                });
+
+                badgesModalClose.addEventListener('click', () => {
+                    badgesModal.style.display = 'none';
+                });
+
+                // Fermer en cliquant en dehors
+                badgesModal.addEventListener('click', (e) => {
+                    if (e.target === badgesModal) {
+                        badgesModal.style.display = 'none';
+                    }
+                });
+            }
+
+            // Le thème est appliqué globalement via global-theme.js; aucun bouton local nécessaire
+
+            // Simple tab active state (visuel seulement)
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.setAttribute('aria-pressed', 'false');
+                        b.classList.remove('bg-dark-accent', 'text-white');
+                        b.classList.add('bg-dark-secondary');
+                    });
+                    btn.setAttribute('aria-pressed', 'true');
+                    btn.classList.add('bg-dark-accent', 'text-white');
+                    btn.classList.remove('bg-dark-secondary');
+                });
+            });
+
+            // Edition du pseudo : prompt simple
+            const editHandleBtn = document.getElementById('edit-handle-btn');
+            if (editHandleBtn) {
+                editHandleBtn.addEventListener('click', async () => {
+                    const handleEl = document.getElementById('profile-handle');
+                    if (!handleEl) return;
+                    const current = handleEl.textContent.trim().replace(/^@/, '');
+                    const newHandle = prompt('Nouveau pseudo (sans @)', current);
+                    if (newHandle !== null && newHandle.trim() !== current) {
+                        const sanitized = newHandle.trim().replace(/^@/, '');
+                        if (sanitized.length === 0) return;
+                        
+                        // Sauvegarder dans la base de données
+                        try {
+                            const supabase = await window.getSupabase();
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (user) {
+                                // Vérifier d'abord si le nom d'utilisateur est déjà pris
+                                const { data: existingUser, error: checkError } = await supabase
+                                    .from('profiles')
+                                    .select('id')
+                                    .eq('username', sanitized)
+                                    .neq('id', user.id)
+                                    .maybeSingle();
+                                
+                                if (checkError) {
+                                    console.error('Erreur vérification username:', checkError);
+                                    alert('Erreur lors de la vérification du pseudo: ' + checkError.message);
+                                    return;
+                                }
+                                
+                                if (existingUser) {
+                                    alert('Ce pseudo est déjà utilisé par un autre utilisateur. Veuillez en choisir un autre.');
+                                    return;
+                                }
+                                
+                                // Mettre à jour le profil avec le nouveau nom d'utilisateur
+                                const { data, error } = await supabase
+                                    .from('profiles')
+                                    .update({ 
+                                        username: sanitized,
+                                        full_name: sanitized, // Mettre à jour également le nom complet
+                                        updated_at: new Date().toISOString() 
+                                    })
+                                    .eq('id', user.id);
+                                
+                                if (error) {
+                                    console.error('Erreur sauvegarde username:', error);
+                                    alert('Erreur lors de la sauvegarde du pseudo: ' + error.message);
+                                    return;
+                                }
+                                
+                                // Mise à jour de l'interface uniquement après succès
+                                handleEl.textContent = '@' + sanitized;
+                                editHandleBtn.setAttribute('aria-label', 'Modifier le pseudo: ' + '@' + sanitized);
+                                
+                                // Mise à jour du nom dans l'en-tête du profil
+                                const nameEl = document.getElementById('profile-name');
+                                if (nameEl) nameEl.textContent = sanitized;
+                                
+                                console.log('Username sauvegardé avec succès:', sanitized);
+                                alert('Pseudo modifié avec succès !');
+                                
+                                // Recharger la page pour s'assurer que tous les éléments sont mis à jour
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1500);
+                            }
+                        } catch (e) {
+                            console.error('Erreur sauvegarde username:', e);
+                            alert('Erreur lors de la sauvegarde du pseudo: ' + (e.message || e));
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+
+
+    <script>
+        // Badges toggle + paramètres accordéon
+        document.addEventListener('DOMContentLoaded', () => {
+            const badgesToggle = document.getElementById('badges-toggle');
+            const badgesPanel = document.getElementById('badges-panel');
+            if (badgesToggle && badgesPanel) {
+                badgesToggle.addEventListener('click', () => {
+                    const show = badgesPanel.style.display === 'none';
+                    badgesPanel.style.display = show ? '' : 'none';
+                    badgesToggle.textContent = show ? 'Masquer' : 'Afficher';
+                });
+            }
+
+
+        });
+    </script>
+
+    <script>
+        // Bio save + pensée save + compte actions
+        document.addEventListener('DOMContentLoaded', () => {
+            const bioInput = document.getElementById('bio-input');
+            const bioCount = document.getElementById('bio-count');
+            const bioSave = document.getElementById('bio-save');
+            const bioCancel = document.getElementById('bio-cancel');
+            const bioDisplay = document.getElementById('bio-display');
+            const bioEditor = document.getElementById('bio-editor');
+            const bioButton = document.getElementById('bio-button');
+            const thoughtInput = document.getElementById('thought-input');
+            const thoughtCount = document.getElementById('thought-count');
+            const thoughtSave = document.getElementById('thought-save');
+            const thoughtCancel = document.getElementById('thought-cancel');
+            const thoughtDisplay = document.getElementById('thought-display');
+            const thoughtEditor = document.getElementById('thought-editor');
+            const thoughtButton = document.getElementById('thought-button');
+            const isOwnProfile = document.body.dataset.ownProfile === 'true';
+
+            const openSection = (editorEl) => {
+                if (!editorEl || !isOwnProfile) return;
+                editorEl.style.display = '';
+            };
+
+            const closeSection = (editorEl) => {
+                if (!editorEl) return;
+                editorEl.style.display = 'none';
+            };
+
+            const handleButtonVisibility = () => {
+                if (!isOwnProfile) return;
+                if (bioButton) bioButton.style.display = '';
+                if (thoughtButton) thoughtButton.style.display = '';
+            };
+
+            handleButtonVisibility();
+
+            if (bioInput && bioCount && bioEditor) {
+                bioCount.textContent = `${bioInput.value.length} / 500`;
+                bioInput.addEventListener('input', () => {
+                    bioCount.textContent = `${bioInput.value.length} / 500`;
+                });
+                closeSection(bioEditor);
+            }
+
+            if (bioButton) {
+                bioButton.addEventListener('click', () => {
+                    const isOpen = bioEditor && bioEditor.style.display !== 'none';
+                    if (bioEditor) bioEditor.style.display = isOpen ? 'none' : '';
+                });
+            }
+
+            if (bioCancel) {
+                bioCancel.addEventListener('click', () => closeSection(bioEditor));
+            }
+
+            if (bioSave) {
+                bioSave.addEventListener('click', async () => {
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Veuillez vous connecter.'); return; }
+                        const value = (bioInput.value || '').slice(0, 500);
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({ bio: value, updated_at: new Date().toISOString() })
+                            .eq('id', user.id);
+                        if (error) throw error;
+                        if (bioDisplay) bioDisplay.textContent = value || 'Aucune bio pour le moment.';
+                        closeSection(bioEditor);
+                        alert('Bio mise à jour.');
+                    } catch (e) { alert('Erreur lors de la mise à jour de la bio.'); }
+                });
+            }
+
+            if (thoughtInput && thoughtCount && thoughtEditor) {
+                thoughtCount.textContent = `${thoughtInput.value.length} / 300`;
+                thoughtInput.addEventListener('input', () => {
+                    thoughtCount.textContent = `${thoughtInput.value.length} / 300`;
+                });
+                closeSection(thoughtEditor);
+            }
+
+            if (thoughtButton) {
+                thoughtButton.addEventListener('click', () => {
+                    const isOpen = thoughtEditor && thoughtEditor.style.display !== 'none';
+                    if (thoughtEditor) thoughtEditor.style.display = isOpen ? 'none' : '';
+                });
+            }
+
+            if (thoughtCancel) {
+                thoughtCancel.addEventListener('click', () => closeSection(thoughtEditor));
+            }
+
+            if (thoughtSave) {
+                thoughtSave.addEventListener('click', async () => {
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Veuillez vous connecter.'); return; }
+                        const value = (thoughtInput.value || '').slice(0, 300);
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({ thought: value, updated_at: new Date().toISOString() })
+                            .eq('id', user.id);
+                        if (error) throw error;
+                        if (thoughtDisplay) thoughtDisplay.textContent = value || 'Rien à partager pour le moment.';
+                        closeSection(thoughtEditor);
+                        alert('Pensée publiée.');
+                    } catch (e) { alert('Erreur lors de la mise à jour de la pensée.'); }
+                });
+            }
+
+            // Modal handlers for bio
+            const bioModal = document.getElementById('bio-modal');
+            const bioModalClose = document.getElementById('bio-modal-close');
+            const bioModalInput = document.getElementById('bio-modal-input');
+            const bioModalCount = document.getElementById('bio-modal-count');
+            const bioModalSave = document.getElementById('bio-modal-save');
+            const bioModalCancel = document.getElementById('bio-modal-cancel');
+
+            if (bioModalInput && bioModalCount) {
+                bioModalCount.textContent = `${bioModalInput.value.length} / 500`;
+                bioModalInput.addEventListener('input', () => {
+                    bioModalCount.textContent = `${bioModalInput.value.length} / 500`;
+                });
+            }
+
+            if (bioModalClose) {
+                bioModalClose.addEventListener('click', () => {
+                    bioModal.style.display = 'none';
+                });
+            }
+
+            if (bioModal) {
+                bioModal.addEventListener('click', (e) => {
+                    if (e.target === bioModal) {
+                        bioModal.style.display = 'none';
+                    }
+                });
+            }
+
+            if (bioModalCancel) {
+                bioModalCancel.addEventListener('click', () => {
+                    bioModal.style.display = 'none';
+                });
+            }
+
+            if (bioModalSave) {
+                bioModalSave.addEventListener('click', async () => {
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Veuillez vous connecter.'); return; }
+                        const value = (bioModalInput.value || '').slice(0, 500);
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({ bio: value, updated_at: new Date().toISOString() })
+                            .eq('id', user.id);
+                        if (error) throw error;
+                        document.getElementById('bio-display').textContent = value || 'Aucune bio pour le moment.';
+                        bioModal.style.display = 'none';
+                        alert('Bio mise à jour.');
+                    } catch (e) { alert('Erreur lors de la mise à jour de la bio.'); }
+                });
+            }
+
+            // Modal handlers for thought
+            const thoughtModal = document.getElementById('thought-modal');
+            const thoughtModalClose = document.getElementById('thought-modal-close');
+            const thoughtModalInput = document.getElementById('thought-modal-input');
+            const thoughtModalCount = document.getElementById('thought-modal-count');
+            const thoughtModalSave = document.getElementById('thought-modal-save');
+            const thoughtModalCancel = document.getElementById('thought-modal-cancel');
+
+            if (thoughtModalInput && thoughtModalCount) {
+                thoughtModalCount.textContent = `${thoughtModalInput.value.length} / 300`;
+                thoughtModalInput.addEventListener('input', () => {
+                    thoughtModalCount.textContent = `${thoughtModalInput.value.length} / 300`;
+                });
+            }
+
+            if (thoughtModalClose) {
+                thoughtModalClose.addEventListener('click', () => {
+                    thoughtModal.style.display = 'none';
+                });
+            }
+
+            if (thoughtModal) {
+                thoughtModal.addEventListener('click', (e) => {
+                    if (e.target === thoughtModal) {
+                        thoughtModal.style.display = 'none';
+                    }
+                });
+            }
+
+            if (thoughtModalCancel) {
+                thoughtModalCancel.addEventListener('click', () => {
+                    thoughtModal.style.display = 'none';
+                });
+            }
+
+            if (thoughtModalSave) {
+                thoughtModalSave.addEventListener('click', async () => {
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Veuillez vous connecter.'); return; }
+                        const value = (thoughtModalInput.value || '').slice(0, 300);
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({ thought: value, updated_at: new Date().toISOString() })
+                            .eq('id', user.id);
+                        if (error) throw error;
+                        document.getElementById('thought-display').textContent = value || 'Rien à partager pour le moment.';
+                        thoughtModal.style.display = 'none';
+                        alert('Pensée publiée.');
+                    } catch (e) { alert('Erreur lors de la mise à jour de la pensée.'); }
+                });
+            }
+
+            const deleteBtn = document.getElementById('delete-account');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const c1 = confirm('Êtes-vous sûr de vouloir supprimer définitivement votre compte ?');
+                    if (!c1) return;
+                    const c2 = confirm('Cette action est irréversible. Toutes vos données (posts, commentaires, likes, messages, abonnements) seront supprimées. Confirmez la suppression.');
+                    if (!c2) return;
+                    const c3 = confirm('DERNIÈRE CONFIRMATION: Cette action ne peut pas être annulée. Êtes-vous absolument certain ?');
+                    if (!c3) return;
+
+                    try {
+                        const supabase = await window.getSupabase();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Non connecté.'); return; }
+
+                        // Fonction utilitaire pour extraire le chemin de stockage depuis une URL publique
+                        const extractStoragePath = (publicUrl) => {
+                            if (!publicUrl) return null;
+                            try {
+                                const { pathname } = new URL(publicUrl);
+                                const bucketPrefix = '/storage/v1/object/public/';
+                                const index = pathname.indexOf(bucketPrefix);
+                                if (index === -1) return null;
+                                return decodeURIComponent(pathname.slice(index + bucketPrefix.length));
+                            } catch (err) {
+                                console.warn('Impossible de parser l\'URL de stockage:', err);
+                                return null;
+                            }
+                        };
+
+                        // Supprimer les fichiers du stockage
+                        console.log('Suppression des fichiers du stockage...');
+
+                        // 1. Récupérer et supprimer les médias du profil (avatar, bannière)
+                        const { data: profile } = await supabase
+                            .from('profiles')
+                            .select('avatar_url, banner_url')
+                            .eq('id', user.id)
+                            .single();
+
+                        const filesToDelete = [];
+                        if (profile?.avatar_url) {
+                            const path = extractStoragePath(profile.avatar_url);
+                            if (path && path.startsWith('profiles/')) filesToDelete.push(path);
+                        }
+                        if (profile?.banner_url) {
+                            const path = extractStoragePath(profile.banner_url);
+                            if (path && path.startsWith('profiles/')) filesToDelete.push(path);
+                        }
+
+                        // 2. Récupérer et supprimer les médias des posts
+                        const { data: posts } = await supabase
+                            .from('posts')
+                            .select('image_url, video_url, audio_url')
+                            .eq('author_id', user.id);
+
+                        if (posts) {
+                            for (const post of posts) {
+                                if (post.image_url) {
+                                    const path = extractStoragePath(post.image_url);
+                                    if (path && path.startsWith('posts/')) filesToDelete.push(path);
+                                }
+                                if (post.video_url) {
+                                    const path = extractStoragePath(post.video_url);
+                                    if (path && path.startsWith('posts/')) filesToDelete.push(path);
+                                }
+                                if (post.audio_url) {
+                                    const path = extractStoragePath(post.audio_url);
+                                    if (path && path.startsWith('posts/')) filesToDelete.push(path);
+                                }
+                            }
+                        }
+
+                        // Supprimer les fichiers par lots de 10 (limite Supabase)
+                        for (let i = 0; i < filesToDelete.length; i += 10) {
+                            const batch = filesToDelete.slice(i, i + 10);
+                            try {
+                                await supabase.storage.from('profiles').remove(batch.filter(p => p.startsWith('profiles/')));
+                                await supabase.storage.from('posts').remove(batch.filter(p => p.startsWith('posts/')));
+                            } catch (e) {
+                                console.warn('Erreur suppression fichiers stockage:', e);
+                            }
+                        }
+
+                        // Supprimer les données de la base de données dans l'ordre correct
+                        console.log('Suppression des données de la base...');
+
+                        // 1. Supprimer les likes de l'utilisateur
+                        await supabase.from('likes').delete().eq('user_id', user.id);
+
+                        // 2. Supprimer les commentaires de l'utilisateur
+                        await supabase.from('comments').delete().eq('author_id', user.id);
+
+                        // 3. Supprimer les relations d'abonnement (en tant que follower et following)
+                        await supabase.from('follows').delete().eq('follower_id', user.id);
+                        await supabase.from('follows').delete().eq('following_id', user.id);
+
+                        // 4. Supprimer les messages de l'utilisateur
+                        await supabase.from('messages').delete().eq('sender_id', user.id);
+
+                        // 5. Gérer les conversations : supprimer la participation et nettoyer les conversations vides
+                        const { data: userConversations } = await supabase
+                            .from('conversation_participants')
+                            .select('conversation_id')
+                            .eq('user_id', user.id);
+
+                        if (userConversations && userConversations.length > 0) {
+                            const conversationIds = userConversations.map(cp => cp.conversation_id);
+
+                            // Supprimer la participation de l'utilisateur
+                            await supabase.from('conversation_participants').delete().eq('user_id', user.id);
+
+                            // Pour chaque conversation, vérifier si elle est vide et la supprimer si nécessaire
+                            for (const convId of conversationIds) {
+                                const { count } = await supabase
+                                    .from('conversation_participants')
+                                    .select('*', { count: 'exact', head: true })
+                                    .eq('conversation_id', convId);
+
+                                if (count === 0) {
+                                    // Supprimer la conversation vide
+                                    await supabase.from('conversations').delete().eq('id', convId);
+                                    // Supprimer tous les messages de cette conversation (même si normalement vides)
+                                    await supabase.from('messages').delete().eq('conversation_id', convId);
+                                }
+                            }
+                        }
+
+                        // 6. Supprimer les posts de l'utilisateur (après avoir supprimé likes et commentaires)
+                        await supabase.from('posts').delete().eq('author_id', user.id);
+
+                        // 7. Enfin, supprimer le profil utilisateur
+                        const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
+                        if (profileError) throw profileError;
+
+                        // Tenter de supprimer le compte d'authentification
+                        try {
+                            const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+                            if (!deleteError) {
+                                alert('✅ Votre compte a été complètement supprimé avec toutes vos données.');
+                                window.location.href = 'login.html';
+                                return;
+                            }
+                        } catch (e) {
+                            console.log('Impossible de supprimer le compte auth côté client:', e);
+                        }
+
+                        // Si la suppression du compte auth échoue, déconnecter et informer
+                        await supabase.auth.signOut();
+                        alert('✅ Votre profil et toutes vos données ont été supprimés.\n\nℹ️ Note: Le compte d\'authentification (email) reste actif mais sans données associées. Pour une suppression complète, contactez le support.');
+                        window.location.href = 'login.html';
+
+                    } catch (e) {
+                        console.error('Erreur suppression compte:', e);
+                        alert('❌ Erreur lors de la suppression: ' + (e.message || 'Vérifiez les permissions et réessayez.'));
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Load Profile Data - Fonction globale réutilisable
+        async function loadProfileData() {
+            try {
+                const avatarImg = document.getElementById('profile-avatar');
+                const bannerDiv = document.getElementById('profile-banner');
+                const bannerImg = document.getElementById('profile-banner-image');
+
+                const setAvatar = (src) => {
+                    if (!avatarImg) return;
+                    if (src) {
+                        avatarImg.src = src;
+                    } else {
+                        const fallback = avatarImg.dataset.placeholder || '';
+                        avatarImg.src = fallback || '';
+                    }
+                };
+
+                const isGif = (url) => {
+                    try {
+                        const u = new URL(url, window.location.origin);
+                        return /\.gif$/i.test(u.pathname);
+                    } catch (_) {
+                        return /\.gif(\?.*)?$/i.test(url || '');
+                    }
+                };
+
+                const setBanner = (src) => {
+                    if (!bannerDiv) return;
+                    if (src && isGif(src)) {
+                        if (bannerImg) {
+                            bannerImg.src = src;
+                            bannerImg.style.display = '';
+                        }
+                        bannerDiv.style.backgroundImage = 'none';
+                    } else {
+                        if (bannerImg) {
+                            bannerImg.style.display = 'none';
+                            bannerImg.src = '';
+                        }
+                        const final = src || bannerDiv.dataset.placeholder || '';
+                        if (final) {
+                            bannerDiv.style.backgroundImage = `url('${final}')`;
+                            bannerDiv.style.backgroundSize = 'cover';
+                            bannerDiv.style.backgroundPosition = 'center';
+                        } else {
+                            bannerDiv.style.backgroundImage = 'none';
+                        }
+                    }
+                };
+
+                const supabase = await window.getSupabase();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                console.log('Profil chargé:', profile);
+
+                if (!profile) {
+                    console.log('Aucun profil trouvé');
+                    return;
+                }
+
+                console.log('Avatar URL:', profile.avatar_url);
+                console.log('Banner URL:', profile.banner_url);
+                
+                setAvatar(profile.avatar_url || null);
+                setBanner(profile.banner_url || null);
+
+                // Name and username
+                if (profile.full_name) {
+                    document.getElementById('profile-name').textContent = profile.full_name;
+                }
+                if (profile.username) {
+                    document.getElementById('profile-handle').textContent = '@' + profile.username;
+                }
+                // Stats
+                if (profile.points !== null) {
+                    document.getElementById('stat-points').textContent = profile.points;
+                }
+                if (profile.followers_count !== null) {
+                    document.getElementById('stat-followers').textContent = profile.followers_count;
+                }
+                if (profile.following_count !== null) {
+                    document.getElementById('stat-following').textContent = profile.following_count;
+                }
+                // Bio
+                if (profile.bio) {
+                    document.getElementById('bio-display').textContent = profile.bio;
+                    document.getElementById('bio-input').value = profile.bio;
+                }
+                // Thought
+                if (profile.thought) {
+                    document.getElementById('thought-display').textContent = profile.thought;
+                }
+            } catch (e) {
+                console.error('Erreur chargement profil:', e);
+            }
+        }
+
+        // Charger au démarrage - désactivé pour ne pas écraser le profil visité
+        // document.addEventListener('DOMContentLoaded', loadProfileData);
+        
+        // Rendre accessible globalement
+        window.loadProfileData = loadProfileData;
+    </script>
+
+    <script>
+        // Avatar and Banner Upload System
+        async function initializeUploads() {
+            // Attendre que Supabase soit prêt
+            if (!window.getSupabase) {
+                setTimeout(initializeUploads, 100);
+                return;
+            }
+
+            const avatarEditBtn = document.getElementById('avatar-edit-btn');
+            const avatarInput = document.getElementById('avatar-input');
+            const avatarImg = document.getElementById('profile-avatar');
+            const bannerEditBtn = document.getElementById('banner-edit-btn');
+            const bannerInput = document.getElementById('banner-input');
+            const bannerDiv = document.getElementById('profile-banner');
+
+            const getSupabaseAndUser = async () => {
+                const supabase = await window.getSupabase();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('Non connecté');
+                return { supabase, user };
+            };
+
+            const extractStoragePath = (publicUrl) => {
+                if (!publicUrl) return null;
+                try {
+                    const { pathname } = new URL(publicUrl);
+                    const bucketPrefix = '/storage/v1/object/public/profiles/';
+                    const index = pathname.indexOf(bucketPrefix);
+                    if (index === -1) return null;
+                    return decodeURIComponent(pathname.slice(index + bucketPrefix.length));
+                } catch (err) {
+                    console.warn('Impossible de parser l\'URL de stockage:', err);
+                    return null;
+                }
+            };
+
+            const deleteFromStorage = async (supabase, publicUrl) => {
+                const objectPath = extractStoragePath(publicUrl);
+                if (!objectPath) return;
+                const { error } = await supabase.storage
+                    .from('profiles')
+                    .remove([objectPath]);
+                if (error) {
+                    console.warn('Suppression de l\'ancien fichier échouée:', error);
+                }
+            };
+
+            const fetchCurrentField = async (supabase, user, field) => {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select(field)
+                    .eq('id', user.id)
+                    .maybeSingle();
+                if (error) throw error;
+                return data ? data[field] : null;
+            };
+
+            const uploadImage = async (supabase, user, file, folder) => {
+                try {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${user.id}/${folder}/${Date.now()}.${fileExt}`;
+
+                    const { error } = await supabase.storage
+                        .from('profiles')
+                        .upload(fileName, file, { upsert: true });
+
+                    if (error) throw error;
+
+                    const { data: publicData } = supabase.storage
+                        .from('profiles')
+                        .getPublicUrl(fileName);
+
+                    if (!publicData || !publicData.publicUrl) {
+                        throw new Error('URL publique introuvable après upload.');
+                    }
+
+                    return publicData.publicUrl;
+                } catch (e) {
+                    console.error('Upload error:', e);
+                    throw e;
+                }
+            };
+
+            const updateProfile = async (supabase, user, field, url) => {
+                try {
+                    const updates = {
+                        [field]: url,
+                        updated_at: new Date().toISOString()
+                    };
+                    const { error } = await supabase
+                        .from('profiles')
+                        .update(updates)
+                        .eq('id', user.id);
+
+                    if (error) throw error;
+                } catch (e) {
+                    console.error('Profile update error:', e);
+                    throw e;
+                }
+            };
+
+            // Avatar upload handler
+            if (avatarEditBtn && avatarInput) {
+                avatarEditBtn.addEventListener('click', () => avatarInput.click());
+                
+                avatarInput.addEventListener('change', async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    if (!file.type.startsWith('image/')) {
+                        alert('Veuillez sélectionner une image.');
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('L\'image ne doit pas dépasser 5MB.');
+                        return;
+                    }
+
+                    try {
+                        avatarEditBtn.disabled = true;
+                        avatarEditBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i>';
+                        if (window.feather) feather.replace();
+
+                        const { supabase, user } = await getSupabaseAndUser();
+                        const previousUrl = await fetchCurrentField(supabase, user, 'avatar_url');
+
+                        const publicUrl = await uploadImage(supabase, user, file, 'avatars');
+                        await updateProfile(supabase, user, 'avatar_url', publicUrl);
+
+                        if (previousUrl && previousUrl !== publicUrl) {
+                            await deleteFromStorage(supabase, previousUrl);
+                        }
+                        
+                        if (typeof window.loadProfileData === 'function') {
+                            await window.loadProfileData();
+                        } else {
+                            avatarImg.src = publicUrl;
+                        }
+                        alert('Photo de profil mise à jour !');
+                    } catch (e) {
+                        alert('Erreur lors de l\'upload: ' + (e.message || e));
+                    } finally {
+                        avatarEditBtn.disabled = false;
+                        avatarEditBtn.innerHTML = '<i data-feather="camera" class="w-4 h-4"></i>';
+                        if (window.feather) feather.replace();
+                        avatarInput.value = '';
+                    }
+                });
+            }
+
+            // Banner upload handler
+            if (bannerEditBtn && bannerInput) {
+                bannerEditBtn.addEventListener('click', () => bannerInput.click());
+                
+                bannerInput.addEventListener('change', async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    if (!file.type.startsWith('image/')) {
+                        alert('Veuillez sélectionner une image.');
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('L\'image ne doit pas dépasser 5MB.');
+                        return;
+                    }
+
+                    try {
+                        bannerEditBtn.disabled = true;
+                        bannerEditBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i>';
+                        if (window.feather) feather.replace();
+
+                        const { supabase, user } = await getSupabaseAndUser();
+                        const previousUrl = await fetchCurrentField(supabase, user, 'banner_url');
+
+                        console.log('Début upload banner...');
+                        const publicUrl = await uploadImage(supabase, user, file, 'banners');
+                        console.log('URL publique banner:', publicUrl);
+                        
+                        await updateProfile(supabase, user, 'banner_url', publicUrl);
+                        console.log('Profil banner mis à jour');
+
+                        if (previousUrl && previousUrl !== publicUrl) {
+                            await deleteFromStorage(supabase, previousUrl);
+                        }
+                        
+                        // Mettre à jour l'affichage via la fonction globale
+                        if (typeof window.loadProfileData === 'function') {
+                            await window.loadProfileData();
+                        } else if (bannerDiv) {
+                            // Fallback simple si la fonction globale n’est pas encore disponible
+                            bannerDiv.style.backgroundImage = `url('${publicUrl}')`;
+                            bannerDiv.style.backgroundSize = 'cover';
+                            bannerDiv.style.backgroundPosition = 'center';
+                        }
+                    } catch (e) {
+                        console.error('Erreur upload banner:', e);
+                        alert('Erreur lors de l\'upload: ' + (e.message || e));
+                    } finally {
+                        bannerEditBtn.disabled = false;
+                        bannerEditBtn.innerHTML = '<i data-feather="edit-2" class="w-4 h-4"></i>';
+                        if (window.feather) feather.replace();
+                        bannerInput.value = '';
+                    }
+                });
+            }
+        }
+
+        // Initialiser les uploads
+        initializeUploads();
+    </script>
+
+    <script>
+        // Follow/Unfollow system
+        document.addEventListener('DOMContentLoaded', async () => {
+            const followBtn = document.getElementById('follow-btn');
+            if (!followBtn) return;
+
+            try {
+                if (!window.getSupabase) return;
+                const supabase = await window.getSupabase();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                // Get profile ID from URL (e.g., ?id=user_id) or use current user's ID
+                const urlParams = new URLSearchParams(window.location.search);
+                const profileId = urlParams.get('id') || user.id;
+
+                // Don't show follow button on own profile
+                if (profileId === user.id) {
+                    followBtn.style.display = 'none';
+                    return;
+                }
+
+                // Show the button
+                followBtn.style.display = '';
+
+                // Check if already following
+                const checkFollowing = async () => {
+                    const { data } = await supabase
+                        .from('follows')
+                        .select('id')
+                        .eq('follower_id', user.id)
+                        .eq('following_id', profileId)
+                        .single();
+                    return !!data;
+                };
+
+                const updateButton = async () => {
+                    const isFollowing = await checkFollowing();
+                    if (isFollowing) {
+                        followBtn.textContent = 'Abonné';
+                        followBtn.classList.remove('bg-dark-accent');
+                        followBtn.classList.add('bg-dark-secondary', 'bg-opacity-50');
+                    } else {
+                        followBtn.textContent = 'S\'abonner';
+                        followBtn.classList.add('bg-dark-accent');
+                        followBtn.classList.remove('bg-dark-secondary', 'bg-opacity-50');
+                    }
+                };
+
+                await updateButton();
+
+                followBtn.addEventListener('click', async () => {
+                    const isFollowing = await checkFollowing();
+                    
+                    if (isFollowing) {
+                        // Unfollow
+                        const { error } = await supabase
+                            .from('follows')
+                            .delete()
+                            .eq('follower_id', user.id)
+                            .eq('following_id', profileId);
+                        
+                        if (!error) {
+                            // Update follower count
+                            await supabase.rpc('decrement_followers', { user_id: profileId });
+                            await supabase.rpc('decrement_following', { user_id: user.id });
+                        }
+                    } else {
+                        // Follow
+                        const { error } = await supabase
+                            .from('follows')
+                            .insert({ follower_id: user.id, following_id: profileId });
+                        
+                        if (!error) {
+                            // Update follower count
+                            await supabase.rpc('increment_followers', { user_id: profileId });
+                            await supabase.rpc('increment_following', { user_id: user.id });
+                        }
+                    }
+
+                    await updateButton();
+                    // Refresh stats
+                    window.location.reload();
+                });
+            } catch (e) { /* silent */ }
+        });
+    </script>
+
+    <!-- Lightbox pour les images de posts -->
+    <div id="image-lightbox" class="hidden fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-75 p-4">
+        <div class="relative max-w-4xl w-full">
+            <button id="close-lightbox" class="absolute top-2 right-2 text-white z-50">✕</button>
+            <img id="lightbox-image" src="" alt="" class="w-full h-auto rounded-lg shadow-lg" />
+        </div>
+    </div>
+
+    <!-- Bio Modal -->
+    <div id="bio-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-filter backdrop-blur-sm flex items-center justify-center z-50" style="display: none;">
+        <div class="glass-card rounded-2xl p-6 max-w-lg w-full m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Modifier la bio</h2>
+                <button id="bio-modal-close" class="p-1 rounded-full hover:bg-dark-secondary">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <label for="bio-modal-input" class="sr-only">Bio</label>
+                <textarea id="bio-modal-input" rows="4" maxlength="500" class="w-full p-3 rounded-lg bg-opacity-5 glass-card" placeholder="Écrivez votre bio ici..."></textarea>
+                <div class="flex items-center justify-between">
+                    <div class="text-sm opacity-75"><span id="bio-modal-count">0</span> / 500</div>
+                    <div class="flex gap-2">
+                        <button id="bio-modal-cancel" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30">Annuler</button>
+                        <button id="bio-modal-save" class="px-3 py-1 rounded-full bg-dark-accent text-white">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thought Modal -->
+    <div id="thought-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-filter backdrop-blur-sm flex items-center justify-center z-50" style="display: none;">
+        <div class="glass-card rounded-2xl p-6 max-w-lg w-full m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Pensée du moment</h2>
+                <button id="thought-modal-close" class="p-1 rounded-full hover:bg-dark-secondary">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <label for="thought-modal-input" class="sr-only">Pensée du moment</label>
+                <textarea id="thought-modal-input" rows="3" maxlength="300" class="w-full p-3 rounded-lg bg-opacity-5 glass-card" placeholder="Votre pensée du moment..."></textarea>
+                <div class="flex items-center justify-between">
+                    <div class="text-sm opacity-75"><span id="thought-modal-count">0</span> / 300</div>
+                    <div class="flex gap-2">
+                        <button id="thought-modal-cancel" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-30">Annuler</button>
+                        <button id="thought-modal-save" class="px-3 py-1 rounded-full bg-dark-accent text-white">Publier</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Settings panel simple drawer
+            document.addEventListener('DOMContentLoaded', () => {
+                const settingsBtn = document.getElementById('settings-button');
+                if (!settingsBtn) return;
+    
+                // Create a basic settings drawer if not present
+                let settingsDrawer = document.getElementById('settings-drawer');
+                if (!settingsDrawer) {
+                    settingsDrawer = document.createElement('div');
+                    settingsDrawer.id = 'settings-drawer';
+                    settingsDrawer.style.display = 'none';
+                    // Modal with backdrop
+                    settingsDrawer.className = 'fixed inset-0 bg-black bg-opacity-60 backdrop-filter backdrop-blur-sm flex items-center justify-center z-50';
+                    // Ensure the settings drawer sits above high z-index elements like the floating nav
+                    settingsDrawer.style.zIndex = '10001';
+                    settingsDrawer.innerHTML = `
+                        <div class="glass-card rounded-xl p-4 w-96 max-w-full m-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <strong>Paramètres du profil</strong>
+                                <button id="settings-close" class="px-2 py-1 rounded-full">✕</button>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-sm font-semibold mb-2">Thème</div>
+                                    <div class="flex gap-2 items-center">
+                                        <button id="theme-light" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-20">Clair</button>
+                                        <button id="theme-dark" class="px-3 py-1 rounded-full bg-dark-secondary bg-opacity-20">Sombre</button>
+                                    </div>
+    
+                                </div>
+    
+                                <div class="border-t pt-2">
+                                    <div class="text-sm font-semibold mb-2">Arrière-plans</div>
+                                    <div id="settings-theme-bg-row" class="flex gap-2 overflow-x-auto pb-2">
+                                        <!-- Background thumbnails will be populated here -->
+                                    </div>
+                                </div>
+    
+                                <div class="border-t pt-2">
+                                    <button id="apply-dominant-color" class="w-full px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30">Couleur dominante de l'avatar</button>
+                                    <button id="open-change-handle" class="w-full px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 mt-2">Modifier le pseudo</button>
+                                    <button id="open-change-avatar" class="w-full px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 mt-2">Changer l'avatar</button>
+                                    <button id="open-bio-editor" class="w-full px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 mt-2" data-visible="auth">Modifier la bio</button>
+                                    <button id="open-thought-editor" class="w-full px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 mt-2" data-visible="auth">Pensée du moment</button>
+                                    <button id="settings-signout" data-auth="signout" class="w-full px-3 py-2 rounded-full bg-dark-secondary bg-opacity-30 mt-2">Se déconnecter</button>
+                                    <button id="delete-account" class="w-full px-3 py-2 rounded-full bg-red-600 text-white mt-2">Supprimer le compte</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(settingsDrawer);
+                }
+    
+                const closeBtn = settingsDrawer.querySelector('#settings-close');
+                settingsBtn.addEventListener('click', () => {
+                    const willOpen = settingsDrawer.style.display === 'none';
+                    settingsDrawer.style.display = willOpen ? 'flex' : 'none';
+                    if (window.feather) feather.replace();
+    
+                    // When opening the settings drawer, ensure the theme backgrounds row is populated
+                    if (willOpen) {
+                        // Build the thumbnail row at open time (select row locally to avoid ordering/hoisting issues)
+                        const applyPopulate = () => {
+                            try {
+                                const themeBgRowLocal = settingsDrawer.querySelector('#settings-theme-bg-row');
+                                if (!themeBgRowLocal) return;
+                                themeBgRowLocal.innerHTML = '';
+    
+                                const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                                const list = (window.getBackgroundsByTheme && window.getBackgroundsByTheme(currentTheme)) || [];
+    
+                                list.forEach((url, idx) => {
+                                    const btn = document.createElement('button');
+                                    btn.className = 'min-w-[80px] h-16 rounded-md bg-cover bg-center border-2 border-transparent flex-shrink-0';
+                                    btn.style.backgroundImage = `url('${url}')`;
+                                    btn.title = url;
+                                    btn.setAttribute('aria-label', `${currentTheme} background ${idx+1}`);
+                                    btn.addEventListener('click', () => {
+                                        if (window.setBackgroundImage) window.setBackgroundImage(url);
+                                        // mark selection (visual)
+                                        Array.from(themeBgRowLocal.children).forEach(c => c.classList.remove('ring-2','ring-offset-1','ring-blue-400'));
+                                        btn.classList.add('ring-2','ring-offset-1','ring-blue-400');
+                                    });
+                                    themeBgRowLocal.appendChild(btn);
+                                });
+    
+                                // mark current selection based on localStorage
+                                const sel = localStorage.getItem('selectedBg');
+                                if (sel) {
+                                    Array.from(themeBgRowLocal.children).forEach(child => {
+                                        try { if ((child.title || '').toString() === sel) child.classList.add('ring-2','ring-offset-1','ring-blue-400'); } catch(e){}
+                                    });
+                                }
+                            } catch (e) { console.warn('populateThemeRow failed on open', e); }
+                        };
+    
+                        // If background API isn't ready yet, wait for it
+                        if (!window.getBackgroundsByTheme) {
+                            const onReady = () => { applyPopulate(); document.removeEventListener('backgroundsReady', onReady); };
+                            document.addEventListener('backgroundsReady', onReady);
+                            // also try a short timeout fallback
+                            setTimeout(applyPopulate, 300);
+                        } else {
+                            applyPopulate();
+                        }
+                    }
+                });
+                if (closeBtn) closeBtn.addEventListener('click', () => settingsDrawer.style.display = 'none');
+    
+                // Close when clicking on the backdrop
+                settingsDrawer.addEventListener('click', (e) => {
+                    if (e.target === settingsDrawer) {
+                        settingsDrawer.style.display = 'none';
+                    }
+                });
+
+            // Wire some actions to existing elements if available
+            const applyDominantColor = settingsDrawer.querySelector('#apply-dominant-color');
+            if (applyDominantColor) applyDominantColor.addEventListener('click', async () => {
+                const avatar = document.getElementById('profile-avatar');
+                if (!avatar) return;
+                const src = avatar.src || avatar.dataset.placeholder;
+                if (!src) return;
+                const color = await window.getDominantColor(src);
+                if (color) {
+                    const bgElement = document.getElementById('vanta-bg');
+                    if (bgElement) {
+                        bgElement.style.backgroundColor = color;
+                        bgElement.style.backgroundImage = 'none';
+                    }
+                    // Save to database
+                    try {
+                        if (window.getSupabase) {
+                            const supabase = await window.getSupabase();
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (user) {
+                                await supabase
+                                    .from('profiles')
+                                    .update({ background: color, updated_at: new Date().toISOString() })
+                                    .eq('id', user.id);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to save dominant color:', e);
+                    }
+                    // Update localStorage
+                    try {
+                        localStorage.setItem('selectedBg', color);
+                    } catch (e) {}
+                }
+            });
+
+            const openChangeHandle = settingsDrawer.querySelector('#open-change-handle');
+            if (openChangeHandle) openChangeHandle.addEventListener('click', () => {
+                document.getElementById('edit-handle-btn')?.click();
+            });
+
+            const openChangeAvatar = settingsDrawer.querySelector('#open-change-avatar');
+            if (openChangeAvatar) openChangeAvatar.addEventListener('click', () => {
+                document.getElementById('avatar-edit-btn')?.click();
+            });
+
+            const openBioEditor = settingsDrawer.querySelector('#open-bio-editor');
+            if (openBioEditor) openBioEditor.addEventListener('click', () => {
+                const modal = document.getElementById('bio-modal');
+                const input = document.getElementById('bio-modal-input');
+                const display = document.getElementById('bio-display');
+                if (modal && input && display) {
+                    input.value = display.textContent === 'Aucune bio pour le moment.' ? '' : display.textContent;
+                    document.getElementById('bio-modal-count').textContent = input.value.length;
+                    modal.style.display = 'flex';
+                    settingsDrawer.style.display = 'none';
+                    input.focus();
+                }
+            });
+
+            const openThoughtEditor = settingsDrawer.querySelector('#open-thought-editor');
+            if (openThoughtEditor) openThoughtEditor.addEventListener('click', () => {
+                const modal = document.getElementById('thought-modal');
+                const input = document.getElementById('thought-modal-input');
+                const display = document.getElementById('thought-display');
+                if (modal && input && display) {
+                    input.value = display.textContent === 'Rien à partager pour le moment.' ? '' : display.textContent;
+                    document.getElementById('thought-modal-count').textContent = input.value.length;
+                    modal.style.display = 'flex';
+                    settingsDrawer.style.display = 'none';
+                    input.focus();
+                }
+            });
+
+            // Delete account button is directly wired by the global handler targeting #delete-account later in this file
+
+            // Sign out button in settings
+            const signOutBtn = settingsDrawer.querySelector('#settings-signout');
+            if (signOutBtn) {
+                signOutBtn.addEventListener('click', async () => {
+                    if (!confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) return;
+                    try {
+                        if (!window.getSupabase) return;
+                        const supabase = await window.getSupabase();
+                        await supabase.auth.signOut();
+                    } catch (e) {
+                        console.warn('Sign out failed:', e);
+                    } finally {
+                        // Redirect to login page
+                        try { window.location.href = 'login.html'; } catch (e) {}
+                    }
+                });
+            }
+
+            // Theme controls
+            const themeLight = settingsDrawer.querySelector('#theme-light');
+            const themeDark = settingsDrawer.querySelector('#theme-dark');
+            const themeBgRow = settingsDrawer.querySelector('#settings-theme-bg-row');
+            const populateThemeRow = (theme) => {
+                if (!themeBgRow) return;
+                themeBgRow.innerHTML = '';
+                const list = (window.getBackgroundsByTheme && window.getBackgroundsByTheme(theme)) || [];
+
+                // remember the currently selected background to allow hover-preview revert
+                const saved = (() => { try { return localStorage.getItem('selectedBg'); } catch (e) { return null; } })();
+
+                list.forEach((url, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'min-w-[80px] h-16 rounded-md bg-cover bg-center border-2 border-transparent flex-shrink-0 overflow-hidden relative';
+                    // background-image (kept for visual) + add an <img> fallback so thumbnails remain visible when CSS background not shown
+                    btn.style.backgroundImage = `url('${url}')`;
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = `miniature ${idx+1}`;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    img.style.display = 'block';
+                    img.style.pointerEvents = 'none';
+                    btn.appendChild(img);
+                    btn.title = url;
+                    btn.setAttribute('aria-label', `${theme} background ${idx+1}`);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('aria-pressed', 'false');
+
+                    // Click: set background and persist selection
+                    const select = async () => {
+                        try { if (window.setBackgroundImage) window.setBackgroundImage(url); else {
+                            const target = document.getElementById('vanta-bg') || document.body; try{ target.style.backgroundImage = `url('${url}')`; }catch(e){}
+                        } } catch(e){}
+                        try { localStorage.setItem('selectedBg', url); } catch(e){}
+
+                        // Save to database if user is logged in
+                        try {
+                            if (window.getSupabase) {
+                                const supabase = await window.getSupabase();
+                                const { data: { user } } = await supabase.auth.getUser();
+                                if (user) {
+                                    await supabase
+                                        .from('profiles')
+                                        .update({ background: url, updated_at: new Date().toISOString() })
+                                        .eq('id', user.id);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Failed to save background to database:', e);
+                        }
+
+                        // visual marker and aria
+                        Array.from(themeBgRow.children).forEach(c => {
+                            c.classList.remove('ring-2','ring-offset-1','ring-blue-400');
+                            try { c.setAttribute('aria-pressed','false'); } catch(e){}
+                        });
+                        btn.classList.add('ring-2','ring-offset-1','ring-blue-400');
+                        try { btn.setAttribute('aria-pressed','true'); } catch(e){}
+                    };
+
+                    btn.addEventListener('click', select);
+
+                    // Hover preview: temporarily apply, revert on leave
+                    btn.addEventListener('mouseenter', () => {
+                        try { if (window.setBackgroundImage) window.setBackgroundImage(url); else {
+                            const target = document.getElementById('vanta-bg') || document.body; try{ target.style.backgroundImage = `url('${url}')`; }catch(e){}
+                        } } catch(e){}
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        try {
+                            const revert = (localStorage.getItem('selectedBg') || saved) || null;
+                            if (revert) {
+                                if (window.setBackgroundImage) window.setBackgroundImage(revert);
+                                else { const target = document.getElementById('vanta-bg') || document.body; try{ target.style.backgroundImage = `url('${revert}')`; }catch(e){} }
+                            }
+                        } catch(e) {}
+                    });
+
+                    // Keyboard: Enter/Space to select; ArrowLeft/ArrowRight to move focus
+                    btn.addEventListener('keydown', (ev) => {
+                        if (ev.key === 'Enter' || ev.key === ' ') {
+                            ev.preventDefault();
+                            select();
+                            return;
+                        }
+                        if (ev.key === 'ArrowRight' || ev.key === 'Right') {
+                            ev.preventDefault();
+                            const next = btn.nextElementSibling;
+                            if (next) next.focus();
+                            return;
+                        }
+                        if (ev.key === 'ArrowLeft' || ev.key === 'Left') {
+                            ev.preventDefault();
+                            const prev = btn.previousElementSibling;
+                            if (prev) prev.focus();
+                            return;
+                        }
+                    });
+
+                    themeBgRow.appendChild(btn);
+                });
+
+                // After adding thumbnails, position the rail to the far right so users can scroll from right -> left
+                try {
+                    setTimeout(() => {
+                        try {
+                            // scrollWidth ensures we move to the end even with variable content width
+                            themeBgRow.scrollTo({ left: themeBgRow.scrollWidth, behavior: 'instant' });
+                        } catch (e) {
+                            try { themeBgRow.scrollLeft = themeBgRow.scrollWidth; } catch (e) {}
+                        }
+                    }, 60);
+                } catch (e) {}
+
+                // mark current selection if any
+                try {
+                    const sel = localStorage.getItem('selectedBg');
+                    if (sel) {
+                        Array.from(themeBgRow.children).forEach(child => {
+                            try { if ((child.title || '') === sel) child.classList.add('ring-2','ring-offset-1','ring-blue-400'); child.setAttribute('aria-pressed','true'); } catch(e){}
+                        });
+                    }
+                } catch(e) {}
+            };
+
+            if (themeLight) themeLight.addEventListener('click', () => { window.setTheme && window.setTheme('light'); populateThemeRow('light'); });
+            if (themeDark) themeDark.addEventListener('click', () => { window.setTheme && window.setTheme('dark'); populateThemeRow('dark'); });
+
+            // Populate initially based on current theme if backgrounds API already available
+            try {
+                const tryPopulate = () => {
+                    populateThemeRow(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                    // mark selection if any
+                    const sel = localStorage.getItem('selectedBg');
+                    if (sel && themeBgRow) {
+                        Array.from(themeBgRow.children).forEach(child => {
+                            try { if ((child.title || '') === sel) child.classList.add('ring-2','ring-offset-1','ring-blue-400'); } catch(e){}
+                        });
+                    }
+                };
+                if (window.getBackgroundsByTheme || window.backgroundsReady) tryPopulate();
+                else document.addEventListener('backgroundsReady', tryPopulate, { once: true });
+            } catch(e) {}
+
+            // Update when global theme changes (in other places)
+            document.addEventListener('themeChanged', (ev) => {
+                const t = ev && ev.detail && ev.detail.theme ? ev.detail.theme : (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                populateThemeRow(t === 'dark' ? 'dark' : 'light');
+            });
+
+            // (Arrière-plan removed from settings drawer)
+        });
+
+        // Make function globally available for testing
+        window.updateProfileBadges = updateProfileBadges;
+    </script>
+
+    <script src="global-theme.js"></script>
+    <script src="notifications.js"></script>
+    <script src="user-badge-display.js"></script>
+    <script src="interactions.js"></script>
+    <script src="badge-system.js"></script>
+    <script src="background-selector.js"></script>
+    <script src="background-init.js"></script>
+    <script src="posts.js"></script>
+    <script>
+    // Script section arrière-plans réduit (prévenir erreurs de syntaxe si fonctionnalités absentes)
+    (function(){})();
+    </script>
+    <script>
+      // Initialiser l'affichage des posts de l'utilisateur sur la page profil
+      document.addEventListener('DOMContentLoaded', async () => {
+        try { if (window.echoesPosts && window.echoesPosts.initProfilePostsUI) await window.echoesPosts.initProfilePostsUI(); } catch(e) {}
+      });
+    </script>
+        <script>
+            // Robust sign-out handler: catch clicks on any element with data-auth="signout"
+            // and perform a safe sign-out. Prevents double execution via a global flag.
+            (function(){
+                async function waitForGetSupabase(timeout = 2000) {
+                    const start = Date.now();
+                    while (Date.now() - start < timeout) {
+                        if (window.getSupabase) return window.getSupabase;
+                        await new Promise(r => setTimeout(r, 100));
+                    }
+                    return null;
+                }
+
+                document.addEventListener('click', async (ev) => {
+                    try {
+                        const target = ev.target && ev.target.closest ? ev.target.closest('[data-auth="signout"]') : null;
+                        if (!target) return;
+                        ev.preventDefault();
+                        if (window.__echoes_signout_in_progress) return;
+                        window.__echoes_signout_in_progress = true;
+
+                        const getter = await waitForGetSupabase(2000);
+                        if (!getter) {
+                            try { window.location.href = 'login.html'; } catch(e){}
+                            return;
+                        }
+                        try {
+                            const supabase = await window.getSupabase();
+                            if (supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
+                                await supabase.auth.signOut();
+                            }
+                        } catch (e) {
+                            console.warn('Sign out failed (fallback):', e);
+                        } finally {
+                            try { window.location.href = 'login.html'; } catch (e) {}
+                        }
+                    } finally {
+                        // small timeout to avoid immediate re-trigger
+                        setTimeout(() => { window.__echoes_signout_in_progress = false; }, 1000);
+                    }
+                });
+            })();
+        </script>
+        <script>
+            /*
+                Extraire la couleur dominante de l'avatar et l'appliquer
+                comme arrière-plan de la page profil.
+                - Utilise un canvas hors-écran et une quantification basique
+                - Tente `crossOrigin='Anonymous'` pour limiter les problèmes de CORS
+                - Fallback silencieux si l'image est inaccessible (CORS/erreur)
+            */
+           (function(){
+               async function getDominantColorFromImageUrl(url){
+                   return new Promise((resolve) => {
+                       try {
+                           const img = new Image();
+                           img.crossOrigin = 'Anonymous';
+                           img.src = url;
+                           img.onload = () => {
+                               try {
+                                   const sw = 40, sh = 40; // petite taille pour performance
+                                   const canvas = document.createElement('canvas');
+                                   canvas.width = sw; canvas.height = sh;
+                                   const ctx = canvas.getContext('2d');
+                                   ctx.drawImage(img, 0, 0, sw, sh);
+                                   const data = ctx.getImageData(0,0,sw,sh).data;
+                                   const counts = {};
+                                   let maxCount = 0, dominantKey = null;
+                                   for (let i = 0; i < data.length; i += 4) {
+                                       const a = data[i+3];
+                                       if (a < 128) continue; // ignorer les pixels majoritairement transparents
+                                       const r = data[i] >> 4; // quantification 16 niveaux
+                                       const g = data[i+1] >> 4;
+                                       const b = data[i+2] >> 4;
+                                       const key = (r << 8) + (g << 4) + b;
+                                       counts[key] = (counts[key] || 0) + 1;
+                                       if (counts[key] > maxCount) { maxCount = counts[key]; dominantKey = key; }
+                                   }
+                                   if (dominantKey === null) { resolve(null); return; }
+                                   const r = ((dominantKey >> 8) & 0xF) << 4;
+                                   const g = ((dominantKey >> 4) & 0xF) << 4;
+                                   const b = (dominantKey & 0xF) << 4;
+                                   resolve(`rgb(${r},${g},${b})`);
+                               } catch (err) {
+                                   console.warn('Erreur lecture canvas (CORS possible) :', err);
+                                   resolve(null);
+                               }
+                           };
+                           img.onerror = () => resolve(null);
+                       } catch (e) { resolve(null); }
+                   });
+               }
+
+               // Exposer la fonction globalement
+               window.getDominantColor = getDominantColorFromImageUrl;
+
+               function darkerColor(rgb, factor){
+                   const m = rgb.match(/(\d+)/g);
+                   if(!m) return rgb;
+                   const [r,g,b] = m.map(Number);
+                   return `rgb(${Math.round(r*factor)},${Math.round(g*factor)},${Math.round(b*factor)})`;
+               }
+
+               function applyBackgroundColor(rgb){
+                   if(!rgb) return;
+                   const darker = darkerColor(rgb, 0.55);
+                   // Appliquer un dégradé subtil pour conserver lisibilité
+                   const bgElement = document.getElementById('vanta-bg');
+                   if (bgElement) bgElement.style.backgroundImage = `linear-gradient(135deg, ${rgb}, ${darker})`;
+                   // Optionnel : stocker dans une variable CSS pour réutilisation
+                   document.documentElement.style.setProperty('--profile-primary-color', rgb);
+               }
+
+               async function updateFromAvatar(el){
+                   if(!el) return;
+                   const src = el.src || el.getAttribute('data-placeholder') || '';
+                   if(!src) return;
+                   const color = await getDominantColorFromImageUrl(src);
+                   if(color) applyBackgroundColor(color);
+                   else {
+                       console.warn('Impossible d\'extraire la couleur dominante (CORS ou erreur). Appliquer fallback.');
+                       applyBackgroundColor('rgb(36,40,44)');
+                   }
+               }
+
+               document.addEventListener('DOMContentLoaded', () => {
+                   const avatar = document.getElementById('profile-avatar');
+                   if(!avatar) return;
+                   // Lancer quand l'avatar est chargé
+                   avatar.addEventListener('load', () => updateFromAvatar(avatar));
+                   // Tentar maintenant (si déjà chargé)
+                   if (avatar.complete && avatar.naturalWidth !== 0) updateFromAvatar(avatar);
+                   else updateFromAvatar(avatar);
+
+                   // Observer les changements de src (upload / chargement dynamiques)
+                   const mo = new MutationObserver((mutations) => {
+                       for (const m of mutations) {
+                           if (m.type === 'attributes' && m.attributeName === 'src') updateFromAvatar(m.target);
+                       }
+                   });
+                   mo.observe(avatar, { attributes: true });
+               });
+           })();
+        </script>
+  </body>
+  </html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Messages</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    <link rel="shortcut icon" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .gradient-text-dark {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .gradient-text-light {
+            background: linear-gradient(90deg, #ec4899, #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent; 
+        }
+        .message-container {
+            height: calc(100vh - 280px);
+            overflow-y: auto;
+        }
+        .message-input {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        .message-input-light {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        /* NEW: styles pour chaque message en petite section (card) */
+        .conversation-list {
+            padding: 1rem; /* internal spacing around group */
+        }
+
+        /* NEW: limiter la largeur de la section des conversations sur grands écrans */
+        .conversations-container {
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        @media (min-width: 1024px) { /* lg et plus */
+            .conversations-container {
+                max-width: 900px; /* largeur réduite sur grands écrans */
+                margin-left: auto;
+                margin-right: auto; /* centrer */
+            }
+        }
+        @media (min-width: 1280px) { /* xl et plus, encore plus restreint si souhaité */
+            .conversations-container {
+                max-width: 760px;
+            }
+        }
+
+        /* Ensure the nav overlays all content */
+        nav.glass-card {
+            z-index: 9999; /* survole tout */
+            position: fixed; /* confirmé pour overlay */
+            left: 50%;
+            transform: translateX(-50%);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Add extra bottom padding so nav doesn't block clickable content */
+        .page-with-nav-padding {
+            padding-bottom: 6.5rem; /* augmente le pb pour laisser de la place sous le contenu */
+        }
+
+        /* NEW: styles pour transformer chaque conversation en "card" survolante */
+        .conversation-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 12px;
+            transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+            text-decoration: none;
+            color: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* espacement vertical entre les cards */
+        .conversation-item + .conversation-item {
+            margin-top: 0.5rem;
+        }
+
+        /* Hover / focus : léger levé et ombre */
+        .conversation-item:hover,
+        .conversation-item:focus {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            outline: none;
+        }
+
+        /* Mode sombre : ajustements de contraste au hover */
+        .dark .conversation-item:hover,
+        .dark .conversation-item:focus {
+            background: rgba(255,255,255,0.03);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        /* Limiter le comportement du texte (truncation conserve) */
+        .conversation-item .flex-1 {
+            min-width: 0;
+        }
+
+        .conversation-item img {
+            flex: 0 0 auto;
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .conversation-item h3, .conversation-item p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white dark:text-dark-text dark:bg-gradient-to-br dark:from-blue-900 dark:to-black">
+    <!-- Navigation -->
+    <nav class="glass-card fixed bottom-4 left-1/2 transform -translate-x-1/2 rounded-full px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-center space-x-3 sm:space-x-8">
+        <a href="index.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="home" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="videos.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="video" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="music.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="mic" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="forum.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="message-square" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="messages.html" class="p-1 sm:p-2 rounded-full bg-dark-secondary bg-opacity-30">
+            <i data-feather="mail" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+        <a href="calm.html" class="p-1 sm:p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+            <i data-feather="book" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </a>
+    </nav>
+
+    <!-- Main Content -->
+    <div id="authenticated-content" class="container mx-auto px-4 pt-8 pb-24">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold gradient-text-dark dark:gradient-text-dark">ECHOES Messages</h1>
+                <p class="text-sm opacity-75">Restez connecté avec vos amis</p>
+            </div>
+            <a href="profile.html" class="flex items-center space-x-2 glass-card rounded-full px-4 py-2">
+                <img id="header-profile-avatar" src="images/default-profil.jpg" alt="Mon Profil" class="w-8 h-8 rounded-full">
+                <span>Mon Profil</span>
+            </a>
+        </header>
+
+        <!-- Conversations + Chat Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 conversations-container">
+            <!-- Left: Conversations -->
+            <div class="glass-card rounded-2xl overflow-hidden lg:col-span-1">
+                <!-- Search -->
+                <div class="p-4 border-b border-dark-secondary">
+                    <div class="relative">
+                        <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 opacity-50"></i>
+                        <input id="messages-search" type="text" placeholder="Rechercher une conversation..." class="w-full pl-10 pr-4 py-2 bg-transparent border border-dark-secondary rounded-full focus:outline-none focus:border-dark-accent">
+                    </div>
+                </div>
+                
+                <!-- Conversation List -->
+                <div id="conversations" class="conversation-list">
+                    <div id="conversations-empty" class="p-6 text-center opacity-70">
+                        Aucune conversation pour le moment.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Chat Thread -->
+            <div id="chat-panel" class="glass-card rounded-2xl overflow-hidden lg:col-span-2 flex flex-col min-h-[420px]">
+                <!-- Chat Header -->
+                <div class="p-4 border-b border-dark-secondary flex items-center gap-3">
+                    <img id="chat-header-avatar" src="images/default-profil.jpg" alt="Avatar" class="w-10 h-10 rounded-full">
+                    <div class="flex-1 min-w-0">
+                        <h3 id="chat-header-name" class="font-medium truncate">Sélectionnez une conversation</h3>
+                        <p id="chat-header-sub" class="text-xs opacity-70 truncate">Aucun message</p>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div id="chat-messages" class="message-container p-4 space-y-3 overflow-y-auto">
+                    <div id="chat-empty" class="p-6 text-center opacity-70">Choisissez un contact pour commencer la discussion.</div>
+                </div>
+
+                <!-- Composer -->
+                <div class="p-3 border-t border-dark-secondary flex items-center gap-2">
+                    <input id="chat-input" type="text" placeholder="Écrire un message..." class="flex-1 message-input rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-dark-accent">
+                    <button id="chat-send-btn" class="bg-dark-accent text-white rounded-full px-4 py-2">Envoyer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Message Button -->
+        <button id="new-message-btn" class="w-full bg-dark-accent text-white py-3 rounded-full flex items-center justify-center space-x-2">
+            <i data-feather="plus" class="w-5 h-5"></i>
+            <span>Nouveau message</span>
+        </button>
+    </div>
+
+    <script>
+        // If the nav overlays content and you need more bottom space, you can toggle this helper class on the main container.
+        // Example (optional): document.querySelector('.container').classList.add('page-with-nav-padding');
+    </script>
+    <script>
+        // Initialiser AOS et les icônes Feather
+        document.addEventListener('DOMContentLoaded', () => {
+            // Init AOS
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+
+            // Render all feather icons (other <i data-feather="..."> seront remplacés)
+            if (typeof feather !== 'undefined' && feather.replace) {
+                feather.replace();
+            }
+
+            // Le thème et l'arrière-plan sont appliqués globalement via global-theme.js et background-init.js
+        });
+    </script>
+<script src="global-theme.js"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script src="auth-guard.js"></script>
+<script src="background-init.js"></script>
+
+<script src="user-badge-display.js"></script>
+<script src="interactions.js"></script>
+<script src="messages.js"></script>
+<script src="badge-system.js"></script>
+</body>
+</html>

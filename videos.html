@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Vidéos</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        :root {
+            --nav-height: 80px; 
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        body {
+            background-color: #000;
+        }
+        .feed {
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .feed::-webkit-scrollbar {
+            display: none;
+        }
+        .video-item {
+            height: 100vh;
+            scroll-snap-align: start;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .video-item video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            z-index: 1;
+            touch-action: none;
+        }
+        .video-item {
+            touch-action: pan-y;
+        }
+        .video-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background: rgba(0,0,0,0.01);
+        }
+        /* Enhanced video controls for mobile */
+        @media (max-width: 640px) {
+            .video-item {
+                height: 100vh;
+            }
+            .video-item video {
+                object-fit: cover;
+            }
+            .video-overlay {
+                padding: 1rem;
+                background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            }
+            .video-actions {
+                right: 0.5rem;
+                gap: 0.8rem;
+                top: 50%;
+            }
+            .action-button {
+                width: 40px;
+                height: 40px;
+                font-size: 0.7rem;
+            }
+        }
+@media (min-width: 641px) and (max-width: 1024px) {
+            .video-item {
+                height: 100vh;
+            }
+            .video-item video {
+                object-fit: contain;
+                max-width: 90vw;
+                max-height: 80vh;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .video-item {
+                height: 100vh;
+            }
+            .video-item video {
+                object-fit: contain;
+                max-width: 80vw;
+                max-height: 70vh;
+            }
+        }
+        .video-overlay {
+            z-index: 2;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            transition: opacity 0.3s;
+        }
+        .video-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+/* Ensure action buttons are always visible */
+        .video-actions {
+            z-index: 3;
+        }
+
+        /* Responsive overlay adjustments */
+        @media (max-width: 640px) {
+            .video-overlay {
+                padding: 1rem;
+            }
+        }
+
+        .video-actions {
+            z-index: 2;
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Responsive action buttons */
+        @media (max-width: 640px) {
+            .video-actions {
+                right: 1rem;
+                gap: 1rem;
+                top: 60%;
+            }
+            .action-button {
+                font-size: 0.75rem;
+                gap: 0.15rem;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                justify-content: center;
+                padding: 0.5rem;
+            }
+        }
+
+        /* Line clamp utility for text truncation */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .action-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            font-size: 0.8rem;
+            gap: 0.25rem;
+        }
+        /* Enhanced video controls */
+        .unmute-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 3;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .seek-indicator {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            z-index: 3;
+            display: none;
+        }
+        .seek-progress {
+            height: 100%;
+            background: white;
+            width: 0;
+        }
+.unmute-btn.show {
+            opacity: 1;
+        }
+        .unmute-btn i {
+            color: white;
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Enhanced action buttons for mobile */
+        @media (max-width: 640px) {
+            .video-actions {
+                right: 1rem;
+                gap: 1rem;
+            }
+            .action-button {
+                background: rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                justify-content: center;
+                padding: 0.5rem;
+                font-size: 0.75rem;
+                gap: 0.15rem;
+                color: white;
+            }
+            .follow-btn {
+                padding: 0.5rem 0.75rem;
+                min-width: 80px;
+            }
+            .follow-btn span {
+                display: inline;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white flex justify-center items-center">
+
+<div class="relative w-full h-screen overflow-hidden bg-black shadow-2xl">
+    <!-- Upload Button -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button id="toggle-upload" class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold flex items-center justify-center shadow-lg hover:shadow-xl transition-all" title="Publier une vidéo">
+            <i data-feather="plus" class="w-6 h-6"></i>
+        </button>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="absolute top-4 left-0 right-0 z-40 flex justify-center">
+        <div class="flex bg-black bg-opacity-50 backdrop-blur-md rounded-full p-1 border border-white border-opacity-20">
+            <button id="filter-all" class="px-4 py-1 rounded-full font-medium text-sm ${currentFilter === 'all' ? 'bg-white text-black' : 'text-white'}" data-filter="all">
+                Toutes
+            </button>
+            <button id="filter-daily" class="px-4 py-1 rounded-full font-medium text-sm ${currentFilter === 'daily' ? 'bg-white text-black' : 'text-white'}" data-filter="daily">
+                Daily
+            </button>
+        </div>
+    </div>
+<!-- Upload Panel -->
+    <div id="upload-panel" class="absolute top-16 left-4 z-40 hidden">
+        <div class="bg-black bg-opacity-70 border border-white border-opacity-20 backdrop-blur-md rounded-lg p-3 w-80">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-bold">Nouvelle vidéo</h4>
+                <button id="close-upload" class="text-white/70 hover:text-white"><i data-feather="x"></i></button>
+            </div>
+            <div class="space-y-2">
+                <input id="video-file" type="file" accept="video/*" class="w-full text-sm" />
+                <input id="video-caption" type="text" maxlength="140" placeholder="Légende (optionnel)" class="w-full text-black text-sm px-2 py-1 rounded" />
+                <label class="flex items-center gap-2 text-sm">
+                    <input id="video-daily" type="checkbox" />
+                    <span>Daily (supprimé après 24h)</span>
+                </label>
+                <button id="upload-submit" class="w-full px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold">Publier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="feed h-full">
+        <!-- Videos will be loaded dynamically here -->
+    </div>
+</div>
+    <script>
+        // Initialize with enhanced video controls
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+            
+            // Initialize video page with enhanced controls
+            initVideosPage();
+            initVideoComments();
+            initUploadUI();
+            initFilterToggle();
+            
+            // Add touch gesture support for all devices
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+            }
+        });
+// Global variables for video management
+        let currentObserver = null;
+        let loadedVideoIds = new Set();
+        let isLoadingMore = false;
+        let hasMoreVideos = true;
+        let currentPage = 0;
+        const VIDEOS_PER_PAGE = 10;
+        let currentFilter = 'all'; // 'all' | 'daily'
+
+        // Helpers Daily
+        const isDailyPost = (post) => Array.isArray(post.tags) && post.tags.includes('daily');
+        const isExpiredDaily = (post) => {
+            if (!isDailyPost(post)) return false;
+            const created = new Date(post.created_at).getTime();
+            return Date.now() - created > 24 * 60 * 60 * 1000;
+        };
+
+        // Function to load video posts from database
+        async function loadVideoPosts(page = 0, limit = VIDEOS_PER_PAGE) {
+            try {
+                const supabase = await window.getSupabase();
+                // Optionnel: cleanup serveur des daily expirées
+                try { await supabase.rpc('cleanup_expired_daily_videos'); } catch (e) {}
+
+                let query = supabase
+                    .from('posts')
+                    .select('*, author:profiles(id, full_name, username, avatar_url, thought, badge), tags')
+                    .not('video_url', 'is', null)
+                    .order('created_at', { ascending: false });
+
+                if (currentFilter === 'daily') {
+                    // server-side filter for daily
+                    query = query.contains('tags', ['daily']);
+                }
+
+                const { data: posts, error } = await query
+                    .range(page * limit, (page + 1) * limit - 1);
+
+                if (error) throw error;
+                const list = posts || [];
+                if (currentFilter === 'daily') {
+                    return list.filter(p => isDailyPost(p) && !isExpiredDaily(p));
+                }
+                // Filtrer côté client les daily expirées en mode 'all'
+                return list.filter(p => !isExpiredDaily(p));
+            } catch (error) {
+                console.error('Error loading video posts:', error);
+                return [];
+            }
+        }
+
+        // Function to render a video post
+        async function renderVideoPost(post) {
+            const authorName = post.author?.full_name || post.author?.username || 'Utilisateur';
+            const avatar = post.author?.avatar_url || 'http://static.photos/people/200x200/1';
+            const authorId = post.author?.id || post.author_id;
+
+            const timeAgo = formatTimeAgo(new Date(post.created_at));
+
+            // Get real interaction counts
+            let likesCount = 0;
+            let commentsCount = 0;
+            let viewsCount = 0;
+            let isLiked = false;
+            let isFollowing = false;
+
+            try {
+                if (window.echoesInteractions) {
+                    [likesCount, commentsCount, isLiked, isFollowing] = await Promise.all([
+                        window.echoesInteractions.getLikesCount(post.id),
+                        window.echoesInteractions.getCommentsCount(post.id),
+                        window.echoesInteractions.isLiked(post.id),
+                        authorId ? window.echoesInteractions.isFollowing(authorId) : Promise.resolve(false)
+                    ]);
+                }
+
+                // Get views count (increment on view)
+                viewsCount = await getVideoViewsCount(post.id);
+                // Cache the count for fallback
+                cacheViewsCount(post.id, viewsCount);
+            } catch (e) {
+                console.warn('[DEBUG renderVideoPost] Error loading counters for video post', post.id, ':', e);
+                // Use cached count as fallback
+                viewsCount = getCachedViewsCount(post.id) || 0;
+            }
+
+            const likedClass = isLiked ? 'text-red-500' : '';
+            const likedFill = isLiked ? 'fill="currentColor"' : '';
+
+            const followBtnClass = isFollowing ? 'bg-dark-accent text-white' : '';
+            const followIcon = isFollowing ? 'user-check' : 'user-plus';
+            const followText = isFollowing ? 'Abonné' : "S'abonner";
+
+            const card = document.createElement('div');
+            card.className = 'video-item';
+            card.dataset.postId = post.id;
+
+            card.innerHTML = `
+                <video poster="${post.image_url || ''}" playsinline loop preload="metadata" data-video-url="${post.video_url}" muted>
+                    <source src="${post.video_url}" type="video/mp4">
+                </video>
+                <button class="unmute-btn" title="Activer le son">
+                    <i data-feather="volume-x"></i>
+                </button>
+                <div class="absolute top-4 left-16 z-30">
+                    <a href="index.html" class="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full transition-all duration-200">
+                        <i data-feather="home" class="w-5 h-5 text-white"></i>
+                    </a>
+                </div>
+<div class="video-overlay">
+                    <div class="w-full max-w-md">
+                        <div class="flex items-center gap-2 mb-2">
+                            <img src="${avatar}" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
+                            <h3 class="font-bold video-author-name text-sm sm:text-base">${escapeHtml(authorName)}</h3>
+                            <button class="px-3 py-2 sm:px-3 sm:py-1 text-xs rounded-full bg-white text-black font-semibold follow-btn ${followBtnClass}" data-action="follow" data-user-id="${authorId}">
+                                <i data-feather="${followIcon}" class="w-4 h-4 sm:w-3 sm:h-3"></i>
+                                <span class="inline sm:hidden">${followText}</span>
+                            </button>
+                        </div>
+                        <p class="text-sm line-clamp-2">${escapeHtml(post.content || '')}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <p class="text-xs opacity-80">♫ Original Audio</p>
+                            <span class="text-xs opacity-60">•</span>
+                            <span class="text-xs opacity-80 flex items-center gap-1">
+                                <i data-feather="eye" class="w-3 h-3"></i>
+                                ${formatViewsCount(viewsCount)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-actions">
+                    <button class="action-button like-btn ${likedClass}" data-action="like" data-post-id="${post.id}" title="Aimer">
+                        <i data-feather="heart" class="w-6 h-6 sm:w-7 sm:h-7" ${likedFill}></i>
+                        <span class="text-xs">${likesCount}</span>
+                    </button>
+                    <button class="action-button comment-btn" data-action="comment" data-post-id="${post.id}" title="Commenter">
+                        <i data-feather="message-square" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+                        <span class="text-xs">${commentsCount}</span>
+                    </button>
+                    <button class="action-button share-btn" data-action="share" data-post-id="${post.id}" data-post-content="${escapeHtml(post.content || '')}" title="Partager">
+                        <i data-feather="send" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+                    </button>
+                    <button class="action-button bookmark-btn" data-action="bookmark" data-post-id="${post.id}" title="Sauvegarder">
+                        <i data-feather="bookmark" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+                    </button>
+                    <button class="action-button download-btn" data-post-id="${post.id}" title="Télécharger">
+                        <i data-feather="download" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Function to format time ago
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + ' an' + (Math.floor(interval) > 1 ? 's' : '');
+
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + ' mois';
+
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + ' jour' + (Math.floor(interval) > 1 ? 's' : '');
+
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + ' heure' + (Math.floor(interval) > 1 ? 's' : '');
+
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + ' minute' + (Math.floor(interval) > 1 ? 's' : '');
+
+            return 'À l\'instant';
+        }
+
+        // Function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Function to get video views count
+        async function getVideoViewsCount(postId) {
+            try {
+                const supabase = await window.getSupabase();
+
+                // First, try to get or create a view record
+                const { data: existingView, error: fetchError } = await supabase
+                    .from('video_views')
+                    .select('views_count')
+                    .eq('post_id', postId)
+                    .single();
+
+                if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found
+                    throw fetchError;
+                }
+
+                let viewsCount = 0;
+
+                if (existingView) {
+                    // Increment existing view count
+                    viewsCount = existingView.views_count + 1;
+                    const { error: updateError } = await supabase
+                        .from('video_views')
+                        .update({ views_count: viewsCount, last_viewed_at: new Date().toISOString() })
+                        .eq('post_id', postId);
+
+                    if (updateError) throw updateError;
+                } else {
+                    // Create new view record
+                    viewsCount = 1;
+                    const { error: insertError } = await supabase
+                        .from('video_views')
+                        .insert({
+                            post_id: postId,
+                            views_count: viewsCount,
+                            last_viewed_at: new Date().toISOString()
+                        });
+
+                    if (insertError) throw insertError;
+                }
+
+                return viewsCount;
+            } catch (error) {
+                console.warn('Error updating views count:', error);
+                // Fallback: return a cached or estimated count
+                return getCachedViewsCount(postId) || 1;
+            }
+        }
+
+        // Function to get cached views count as fallback
+        function getCachedViewsCount(postId) {
+            const cache = JSON.parse(localStorage.getItem('video_views_cache') || '{}');
+            return cache[postId] || null;
+        }
+
+        // Function to cache views count locally
+        function cacheViewsCount(postId, count) {
+            const cache = JSON.parse(localStorage.getItem('video_views_cache') || '{}');
+            cache[postId] = count;
+            localStorage.setItem('video_views_cache', JSON.stringify(cache));
+        }
+
+        // Function to format views count
+        function formatViewsCount(count) {
+            if (count >= 1000000) {
+                return (count / 1000000).toFixed(1) + 'M';
+            } else if (count >= 1000) {
+                return (count / 1000).toFixed(1) + 'K';
+            } else {
+                return count.toString();
+            }
+        }
+        // Enhanced video controls with touch gestures
+        function setupVideoObserver() {
+            const feed = document.querySelector('.feed');
+            if (!feed) return;
+
+            // Disconnect previous observer
+            if (currentObserver) {
+                currentObserver.disconnect();
+            }
+
+            const videos = feed.querySelectorAll('video');
+            const observerOptions = {
+                root: feed,
+                threshold: 0.7
+            };
+
+            currentObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const v = entry.target;
+                    const videoItem = v.parentElement;
+                    const unmuteBtn = videoItem.querySelector('.unmute-btn');
+                    const overlay = videoItem.querySelector('.video-overlay');
+                    
+                    if (entry.isIntersecting) {
+                        // Start muted to allow autoplay
+                        v.muted = true;
+                        v.volume = 0.5;
+                        v.play().then(() => {
+                            if (unmuteBtn) unmuteBtn.classList.add('show');
+                            if (overlay) overlay.classList.remove('hidden');
+                        }).catch(() => {
+                            if (unmuteBtn) unmuteBtn.classList.add('show');
+                        });
+                        
+                        // Setup touch controls
+                        setupVideoTouchControls(videoItem, v);
+                    } else {
+                        v.pause();
+                        if (unmuteBtn) unmuteBtn.classList.remove('show');
+                        if (overlay) overlay.classList.add('hidden');
+                    }
+                });
+            }, observerOptions);
+
+            videos.forEach(v => {
+                currentObserver.observe(v);
+                v.pause();
+                v.muted = true;
+
+                // Add unmute button click handler
+                const unmuteBtn = v.parentElement.querySelector('.unmute-btn');
+                if (unmuteBtn) {
+                    unmuteBtn.addEventListener('click', async () => {
+                        try {
+                            v.muted = !v.muted;
+                            if (!v.muted) v.volume = 0.5;
+                            unmuteBtn.classList.remove('show');
+                            if (v.paused) await v.play();
+                            const icon = unmuteBtn.querySelector('i');
+                            if (icon) {
+                                icon.setAttribute('data-feather', v.muted ? 'volume-x' : 'volume-2');
+                                feather.replace();
+                            }
+                        } catch (error) {
+                            console.warn('Failed to toggle mute:', error);
+                        }
+                    });
+                }
+
+                // Add overlay click to toggle play/pause
+                const overlay = v.parentElement.querySelector('.video-overlay');
+                if (overlay) {
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay || e.target.closest('.video-overlay')) {
+                            if (v.paused) {
+                                v.play();
+                            } else {
+                                v.pause();
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function setupVideoTouchControls(videoItem, video) {
+            let startX = 0;
+            let startTime = 0;
+            let isSeeking = false;
+            const seekIndicator = document.createElement('div');
+            seekIndicator.className = 'seek-indicator';
+            seekIndicator.innerHTML = '<div class="seek-progress"></div>';
+            videoItem.appendChild(seekIndicator);
+
+            videoItem.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startTime = video.currentTime;
+                isSeeking = true;
+            }, { passive: true });
+
+            videoItem.addEventListener('touchmove', (e) => {
+                if (!isSeeking || e.touches.length !== 1) return;
+                const diffX = e.touches[0].clientX - startX;
+                const seekAmount = (diffX / window.innerWidth) * 20; // 20 second max seek
+                
+                seekIndicator.style.display = 'block';
+                const progress = seekIndicator.querySelector('.seek-progress');
+                
+                if (diffX > 0) {
+                    // Forward seek
+                    progress.style.width = `${Math.min(100, (diffX / window.innerWidth) * 100)}%`;
+                    progress.style.marginLeft = '0';
+                } else {
+                    // Backward seek
+                    progress.style.width = `${Math.min(100, (-diffX / window.innerWidth) * 100)}%`;
+                    progress.style.marginLeft = 'auto';
+                }
+            }, { passive: true });
+
+            videoItem.addEventListener('touchend', (e) => {
+                if (!isSeeking) return;
+                isSeeking = false;
+                
+                const diffX = e.changedTouches[0].clientX - startX;
+                const seekAmount = (diffX / window.innerWidth) * 20; // 20 second max seek
+                
+                if (Math.abs(diffX) > 10) { // Minimum swipe threshold
+                    const newTime = Math.max(0, Math.min(video.duration, startTime + seekAmount));
+                    video.currentTime = newTime;
+                }
+                
+                seekIndicator.style.display = 'none';
+                
+                // Toggle play/pause if it was a tap (not swipe)
+                if (Math.abs(diffX) < 10) {
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        video.pause();
+                    }
+                }
+            }, { passive: true });
+        }
+// Function to load more videos (infinite scroll)
+        async function loadMoreVideos() {
+            if (isLoadingMore || !hasMoreVideos) return;
+
+            isLoadingMore = true;
+            const feed = document.querySelector('.feed');
+            if (!feed) return;
+
+            try {
+                const videos = await loadVideoPosts(currentPage + 1, VIDEOS_PER_PAGE);
+                if (videos.length === 0) {
+                    hasMoreVideos = false;
+                    return;
+                }
+
+                // Filter out already loaded videos
+                const newVideos = videos.filter(video => !loadedVideoIds.has(video.id));
+                newVideos.forEach(video => loadedVideoIds.add(video.id));
+
+                // Append new videos
+                for (const video of newVideos) {
+                    const videoEl = await renderVideoPost(video);
+                    feed.appendChild(videoEl);
+                }
+
+                currentPage++;
+
+                // Re-setup observer for new videos
+                setupVideoObserver();
+
+                // Re-initialize feather icons for new elements
+                if (window.feather) feather.replace();
+
+                // Update interaction counters for new videos
+                updateVideoCounters(newVideos);
+
+            } catch (error) {
+                console.error('Error loading more videos:', error);
+            } finally {
+                isLoadingMore = false;
+            }
+        }
+
+        // Function to initialize videos page
+        async function initVideosPage() {
+            const feed = document.querySelector('.feed');
+            if (!feed) return;
+
+            try {
+                // Load initial videos
+                const videos = await loadVideoPosts(0, VIDEOS_PER_PAGE);
+                videos.forEach(video => loadedVideoIds.add(video.id));
+
+                // Clear existing content and add new videos
+                feed.innerHTML = '';
+
+                if (videos.length === 0) {
+                    feed.innerHTML = '<div class="text-center text-white p-8">Aucune vidéo disponible pour le moment.</div>';
+                    return;
+                }
+
+                for (const video of videos) {
+                    const videoEl = await renderVideoPost(video);
+                    feed.appendChild(videoEl);
+                }
+
+                // Setup video observer
+                setupVideoObserver();
+
+                // Setup infinite scroll
+                const observerOptions = {
+                    root: null,
+                    rootMargin: '100px',
+                    threshold: 0.1
+                };
+
+                const infiniteScrollObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            loadMoreVideos();
+                        }
+                    });
+                }, observerOptions);
+
+                // Create a sentinel element for infinite scroll
+                const sentinel = document.createElement('div');
+                sentinel.className = 'sentinel';
+                sentinel.style.height = '1px';
+                feed.appendChild(sentinel);
+                infiniteScrollObserver.observe(sentinel);
+
+            } catch (error) {
+                console.error('Error initializing videos page:', error);
+                feed.innerHTML = '<div class="text-center text-white p-8">Erreur lors du chargement des vidéos</div>';
+            }
+        }
+        function initFilterToggle() {
+            const allBtn = document.getElementById('filter-all');
+            const dailyBtn = document.getElementById('filter-daily');
+            if (!allBtn || !dailyBtn) return;
+            
+            const setFilter = async (filter) => {
+                if (currentFilter === filter) return;
+                currentFilter = filter;
+                
+                // Update button states
+                allBtn.classList.toggle('bg-white', filter === 'all');
+                allBtn.classList.toggle('text-black', filter === 'all');
+                allBtn.classList.toggle('text-white', filter !== 'all');
+                
+                dailyBtn.classList.toggle('bg-white', filter === 'daily');
+                dailyBtn.classList.toggle('text-black', filter === 'daily');
+                dailyBtn.classList.toggle('text-white', filter !== 'daily');
+                
+                // Add transition effect
+                const feed = document.querySelector('.feed');
+                if (!feed) return;
+                
+                feed.style.opacity = '0.5';
+                feed.style.transition = 'opacity 0.3s ease';
+                
+                setTimeout(async () => {
+                    const videos = await loadVideoPosts(0, VIDEOS_PER_PAGE);
+                    feed.innerHTML = '';
+                    loadedVideoIds.clear();
+                    currentPage = 0;
+                    hasMoreVideos = true;
+                    
+                    for (const v of videos) {
+                        loadedVideoIds.add(v.id);
+                        const el = await renderVideoPost(v);
+                        feed.appendChild(el);
+                    }
+                    
+                    setupVideoObserver();
+                    if (window.feather) feather.replace();
+                    
+                    feed.style.opacity = '1';
+                }, 300);
+            };
+
+            allBtn.addEventListener('click', () => setFilter('all'));
+            dailyBtn.addEventListener('click', () => setFilter('daily'));
+        }
+// Function to update counters for video posts
+        async function updateVideoCounters(videos) {
+            if (!videos || !window.echoesInteractions) return;
+
+            for (const video of videos) {
+                try {
+                    const [likesCount, commentsCount] = await Promise.all([
+                        window.echoesInteractions.getLikesCount(video.id),
+                        window.echoesInteractions.getCommentsCount(video.id)
+                    ]);
+
+                    // Update like counter
+                    const likeBtn = document.querySelector(`[data-action="like"][data-post-id="${video.id}"] span`);
+                    if (likeBtn) likeBtn.textContent = likesCount;
+
+                    // Update comment counter
+                    const commentBtn = document.querySelector(`[data-action="comment"][data-post-id="${video.id}"] span`);
+                    if (commentBtn) commentBtn.textContent = commentsCount;
+                } catch (e) {
+                    console.warn('Error updating counters for video', video.id, e);
+                }
+            }
+        }
+
+        // Function to handle video comments overlay
+        function initVideoComments() {
+            document.addEventListener('click', async (e) => {
+                const commentBtn = e.target.closest('[data-action="comment"]');
+                if (!commentBtn) return;
+
+                e.preventDefault();
+                const postId = commentBtn.dataset.postId;
+                if (!postId) return;
+
+                // Create or show comments overlay
+                showVideoCommentsOverlay(postId);
+            });
+        }
+
+        // Function to show comments overlay for videos
+        async function showVideoCommentsOverlay(postId) {
+            // Remove existing overlay if any
+            const existingOverlay = document.querySelector('.video-comments-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'video-comments-overlay fixed inset-0 z-50 bg-black bg-opacity-75 flex items-end sm:items-center justify-center p-4';
+            overlay.innerHTML = `
+                <div class="bg-dark-secondary rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-700">
+                        <h3 class="text-lg font-semibold">Commentaires</h3>
+                        <button class="close-comments text-gray-400 hover:text-white">
+                            <i data-feather="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div class="comments-list flex-1 overflow-y-auto p-4 space-y-3 max-h-96">
+                        <!-- Comments will be loaded here -->
+                        <div class="text-center text-gray-400 py-4">Chargement...</div>
+                    </div>
+                    <div class="comment-input p-4 border-t border-gray-700">
+                        <div class="flex space-x-2">
+                            <input
+                                type="text"
+                                placeholder="Écrire un commentaire..."
+                                class="flex-1 bg-dark-primary border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dark-accent text-gray-900 placeholder-gray-500"
+                            >
+                            <button class="send-comment bg-dark-accent hover:bg-opacity-80 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+                                Envoyer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Initialize feather icons
+            if (window.feather) feather.replace();
+
+            // Load comments
+            await loadVideoComments(postId, overlay);
+
+            // Setup event listeners
+            setupCommentsOverlayEvents(overlay, postId);
+        }
+
+        // Function to load comments for overlay
+        async function loadVideoComments(postId, overlay) {
+            try {
+                const commentsList = overlay.querySelector('.comments-list');
+                const comments = await window.echoesInteractions.getComments(postId, 20);
+
+                if (comments.length === 0) {
+                    commentsList.innerHTML = '<div class="text-center text-gray-400 py-4">Aucun commentaire pour le moment.</div>';
+                    return;
+                }
+
+                commentsList.innerHTML = comments.map(comment => `
+                    <div class="comment flex space-x-2">
+                        <img src="${comment.author?.avatar_url || 'images/default-profil.jpg'}" alt="${comment.author?.username || 'User'}" class="w-8 h-8 rounded-full flex-shrink-0">
+                        <div class="flex-1">
+                            <div class="bg-dark-primary rounded-lg px-3 py-2">
+                                <div class="font-medium text-sm">${escapeHtml(comment.author?.username || comment.author?.full_name || 'Utilisateur')}</div>
+                                <p class="text-sm">${escapeHtml(comment.content)}</p>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">${formatTimeAgo(new Date(comment.created_at))}</p>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                overlay.querySelector('.comments-list').innerHTML = '<div class="text-center text-red-400 py-4">Erreur lors du chargement des commentaires.</div>';
+            }
+        }
+
+        // Function to setup overlay events
+        function setupCommentsOverlayEvents(overlay, postId) {
+            // Close overlay
+            overlay.querySelector('.close-comments').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+
+            // Send comment
+            const sendBtn = overlay.querySelector('.send-comment');
+            const input = overlay.querySelector('input');
+
+            const submitComment = async () => {
+                const content = input.value.trim();
+                if (!content) return;
+
+                try {
+                    sendBtn.disabled = true;
+                    sendBtn.textContent = 'Envoi...';
+
+                    await window.echoesInteractions.addComment(postId, content);
+
+                    // Reload comments
+                    await loadVideoComments(postId, overlay);
+
+                    // Update comment count
+                    const commentBtn = document.querySelector(`[data-action="comment"][data-post-id="${postId}"] span`);
+                    if (commentBtn) {
+                        const count = await window.echoesInteractions.getCommentsCount(postId);
+                        commentBtn.textContent = count;
+                    }
+
+                    input.value = '';
+
+                } catch (error) {
+                    alert('Erreur: ' + (error.message || 'Impossible d\'ajouter le commentaire'));
+                } finally {
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = 'Envoyer';
+                }
+            };
+
+            sendBtn.addEventListener('click', submitComment);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitComment();
+                }
+            });
+        }
+
+        // Upload UI init and handlers
+        async function initUploadUI() {
+            const toggleBtn = document.getElementById('toggle-upload');
+            
+            // Make upload panel appear near the + button
+            const uploadPanel = document.getElementById('upload-panel');
+            if (uploadPanel) {
+                uploadPanel.classList.remove('absolute', 'top-16', 'left-4');
+                uploadPanel.classList.add('fixed', 'bottom-24', 'right-6');
+            }
+const panel = document.getElementById('upload-panel');
+            const closeBtn = document.getElementById('close-upload');
+            const uploadBtn = document.getElementById('upload-submit');
+            const fileInput = document.getElementById('video-file');
+            const captionInput = document.getElementById('video-caption');
+            const dailyCheckbox = document.getElementById('video-daily');
+            if (!toggleBtn || !panel || !closeBtn || !uploadBtn) return;
+
+            const open = () => { panel.classList.remove('hidden'); };
+            const close = () => { panel.classList.add('hidden'); };
+            toggleBtn.addEventListener('click', open);
+            closeBtn.addEventListener('click', close);
+
+            uploadBtn.addEventListener('click', async () => {
+                const file = fileInput?.files?.[0];
+                if (!file) { alert('Choisissez une vidéo'); return; }
+                if (!file.type.startsWith('video/')) { alert('Le fichier doit être une vidéo'); return; }
+                if (file.size > 100 * 1024 * 1024) { alert('Vidéo trop volumineuse (max 100MB)'); return; }
+
+                uploadBtn.disabled = true; uploadBtn.textContent = 'Publication...';
+                try {
+                    const supabase = await window.getSupabase();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) { alert('Veuillez vous connecter'); return; }
+
+                    const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+                    const path = `videos/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                    const { error: upErr } = await supabase.storage.from('posts').upload(path, file, { upsert: false, contentType: file.type });
+                    if (upErr) throw upErr;
+
+                    const { data: pub } = await supabase.storage.from('posts').getPublicUrl(path);
+                    const videoUrl = pub.publicUrl;
+
+                    const tags = dailyCheckbox.checked ? ['daily'] : [];
+                    const { error: insErr } = await supabase.from('posts').insert({
+                        author_id: user.id,
+                        content: captionInput.value?.trim() || null,
+                        video_url: videoUrl,
+                        tags
+                    });
+                    if (insErr) throw insErr;
+
+                    close();
+                    fileInput.value = ''; captionInput.value = ''; dailyCheckbox.checked = false;
+
+                    // Reload feed from first page
+                    const feed = document.querySelector('.feed');
+                    if (feed) {
+                        const videos = await loadVideoPosts(0, VIDEOS_PER_PAGE);
+                        feed.innerHTML = '';
+                        loadedVideoIds.clear();
+                        for (const v of videos) {
+                            loadedVideoIds.add(v.id);
+                            const el = await renderVideoPost(v);
+                            feed.appendChild(el);
+                        }
+                        setupVideoObserver();
+                        if (window.feather) feather.replace();
+                    }
+                } catch (err) {
+                    alert('Erreur de publication: ' + (err.message || err));
+                } finally {
+                    uploadBtn.disabled = false; uploadBtn.textContent = 'Publier';
+                }
+            });
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initVideosPage();
+            initVideoComments();
+            initUploadUI();
+            initFilterToggle();
+        });
+    </script>
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script src="interactions.js"></script>
+<script src="badge-injector.js"></script>
+<script src="user-badge-display.js"></script>
+<script src="background-init.js"></script>
+</body>
+</html>

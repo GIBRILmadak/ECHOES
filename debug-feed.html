@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - ECHOES Feed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="global-theme.js"></script>
+    <script defer src="background-init.js"></script>
+    <style>
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        .info { color: blue; }
+    </style>
+</head>
+<body class="p-6 bg-gray-100">
+    <h1 class="text-2xl font-bold mb-6">Debug ECHOES Feed</h1>
+    
+    <div id="debug-output"></div>
+    
+    <div class="debug-section">
+        <h2 class="text-lg font-semibold mb-3">Actions de test</h2>
+        <button id="test-supabase" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Tester Supabase</button>
+        <button id="test-auth" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Tester Auth</button>
+        <button id="test-posts" class="bg-purple-500 text-white px-4 py-2 rounded mr-2">Tester Posts</button>
+        <button id="create-test-post" class="bg-orange-500 text-white px-4 py-2 rounded">Créer Post Test</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="auth-guard.js"></script>
+    <script src="auth.js"></script>
+    <script src="posts.js"></script>
+
+    <script>
+        const debugOutput = document.getElementById('debug-output');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            debugOutput.appendChild(div);
+            console.log(`[DEBUG ${type.toUpperCase()}]`, message);
+        }
+
+        async function testSupabase() {
+            try {
+                log('🔧 Test de la connexion Supabase...', 'info');
+                
+                // Vérifier la config
+                if (!window.__SUPABASE_CONFIG__) {
+                    log('❌ Configuration Supabase manquante', 'error');
+                    return;
+                }
+                
+                log(`✅ Config trouvée: ${window.__SUPABASE_CONFIG__.url}`, 'success');
+                
+                // Tester le client
+                const supabase = await window.getSupabase();
+                log('✅ Client Supabase créé avec succès', 'success');
+                
+                // Tester une requête simple
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                if (error) {
+                    log(`❌ Erreur requête test: ${error.message}`, 'error');
+                } else {
+                    log('✅ Requête test réussie', 'success');
+                }
+                
+            } catch (e) {
+                log(`❌ Erreur test Supabase: ${e.message}`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            try {
+                log('🔐 Test de l\'authentification...', 'info');
+                
+                const supabase = await window.getSupabase();
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    log(`❌ Erreur auth: ${error.message}`, 'error');
+                    return;
+                }
+                
+                if (user) {
+                    log(`✅ Utilisateur connecté: ${user.email} (ID: ${user.id})`, 'success');
+                    
+                    // Vérifier le profil
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (profileError) {
+                        log(`⚠️ Profil non trouvé: ${profileError.message}`, 'warning');
+                    } else {
+                        log(`✅ Profil trouvé: ${profile.full_name || profile.username}`, 'success');
+                    }
+                } else {
+                    log('⚠️ Aucun utilisateur connecté', 'warning');
+                }
+                
+            } catch (e) {
+                log(`❌ Erreur test auth: ${e.message}`, 'error');
+            }
+        }
+
+        async function testPosts() {
+            try {
+                log('📝 Test du chargement des posts...', 'info');
+                
+                if (!window.echoesPosts) {
+                    log('❌ Module echoesPosts non disponible', 'error');
+                    return;
+                }
+                
+                const posts = await window.echoesPosts.loadPosts();
+                log(`✅ Posts chargés: ${posts.length} posts trouvés`, 'success');
+                
+                if (posts.length === 0) {
+                    log('⚠️ Aucun post dans la base de données', 'warning');
+                } else {
+                    posts.forEach((post, index) => {
+                        log(`📄 Post ${index + 1}: "${post.content?.substring(0, 50) || 'Pas de contenu'}..." par ${post.author?.full_name || 'Auteur inconnu'}`, 'info');
+                    });
+                }
+                
+            } catch (e) {
+                log(`❌ Erreur test posts: ${e.message}`, 'error');
+            }
+        }
+
+        async function createTestPost() {
+            try {
+                log('➕ Création d\'un post de test...', 'info');
+                
+                const supabase = await window.getSupabase();
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    log('❌ Vous devez être connecté pour créer un post', 'error');
+                    return;
+                }
+                
+                if (!window.echoesPosts) {
+                    log('❌ Module echoesPosts non disponible', 'error');
+                    return;
+                }
+                
+                const testContent = `Post de test créé le ${new Date().toLocaleString()}`;
+                const post = await window.echoesPosts.createPost(testContent);
+                
+                log(`✅ Post de test créé avec succès (ID: ${post.id})`, 'success');
+                
+                // Recharger les posts
+                await testPosts();
+                
+            } catch (e) {
+                log(`❌ Erreur création post test: ${e.message}`, 'error');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('test-supabase').addEventListener('click', testSupabase);
+        document.getElementById('test-auth').addEventListener('click', testAuth);
+        document.getElementById('test-posts').addEventListener('click', testPosts);
+        document.getElementById('create-test-post').addEventListener('click', createTestPost);
+
+        // Auto-run initial tests
+        window.addEventListener('load', async () => {
+            log('🚀 Démarrage des tests automatiques...', 'info');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre que les scripts se chargent
+            
+            await testSupabase();
+            await testAuth();
+            await testPosts();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHOES - Réseau Social</title>
+    <!-- Primary favicon (PNG) -->
+    <link rel="icon" type="image/png" href="icon.png">
+    <!-- Shortcut for older browsers -->
+    <link rel="shortcut icon" href="icon.png" type="image/png">
+    <!-- Apple touch icon for iOS -->
+    <link rel="apple-touch-icon" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            primary: '#0f172a',
+                            secondary: '#1e293b',
+                            accent: '#3b82f6',
+                            text: '#f8fafc'
+                        },
+                        light: {
+                            primary: '#ffffff',
+                            secondary: '#f9fafb',
+                            accent: '#ec4899',
+                            text: '#1e293b'
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                        sm: '4px',
+                        md: '8px',
+                        lg: '12px',
+                        xl: '16px',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script defer src="global-theme.js"></script>
+    <script defer src="background-init.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js"></script>
+    <script src="notifications.js"></script>
+    <script src="user-badge-display.js"></script>
+    <script src="interactions.js"></script>
+    <script src="dynamic-content.js"></script>
+    <style>
+        /* minor ordering fix: put -webkit- before standard property for compatibility */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.7);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .theme-transition {
+            transition: background-color 0.5s ease, color 0.3s ease;
+        }
+        .gradient-text-dark {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .gradient-text-light {
+            background: linear-gradient(90deg, #ec4899, #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        /* safe area padding for bottom nav */
+        .nav-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+        /* FAB tooltip */
+        .fab-container { position: fixed; left: 1.5rem; bottom: 1.5rem; z-index: 60; }
+        .fab-tooltip {
+            position: absolute;
+            left: 3.25rem;
+            bottom: 0.75rem;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 160ms ease, transform 160ms ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .fab-container:hover .fab-tooltip { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black theme-transition text-white dark:text-dark-text dark:bg-gradient-to-br dark:from-blue-900 dark:to-black">
+    <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
+    
+    <!-- Authenticated View -->
+    <div id="authenticated-content">
+        <nav class="glass-card nav-safe fixed bottom-6 left-1/2 transform -translate-x-1/2 rounded-full px-4 md:px-8 py-3 flex items-center justify-center space-x-3 md:space-x-8 z-50 max-w-[26rem] w-auto">
+            <a href="index.html" title="Accueil" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+                <i data-feather="home" class="w-5 h-5"></i>
+            </a>
+            <a href="messages.html" title="Messages" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+                <i data-feather="mail" class="w-5 h-5"></i>
+            </a>
+            <a href="calm.html" title="Calme" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30">
+                <i data-feather="book" class="w-5 h-5"></i>
+            </a>
+            <a href="profile.html" title="Mon Profil" id="nav-profile-link" class="p-2 rounded-full hover:bg-dark-secondary dark:hover:bg-opacity-30 flex items-center justify-center transition-transform transform hover:scale-105 md:hover:scale-100">
+                <img id="profile-button-avatar" src="images/default-profil.jpg" alt="Profile" class="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover bg-gray-200 dark:bg-gray-700" onerror="this.onerror=null;this.src='images/default-profil.jpg'">
+            </a>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto px-4 pt-28 pb-24">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold gradient-text-dark dark:gradient-text-dark">ECHOES</h1>
+                <p class="text-sm opacity-75">Votre réseau social polyvalent</p>
+            </div>
+            <!-- Profile link moved to bottom navigation -->
+        </header>
+
+        <!-- Top quick access toolbar for Videos / Music / Forum -->
+        <div class="mb-6 flex items-center justify-center space-x-4">
+            <a href="videos.html" class="px-4 py-2 bg-dark-secondary bg-opacity-30 rounded-full flex items-center space-x-2 hover:bg-opacity-50">
+                <i data-feather="video" class="w-4 h-4"></i><span>Vidéos</span>
+            </a>
+            <a href="music.html" class="px-4 py-2 bg-dark-secondary bg-opacity-30 rounded-full flex items-center space-x-2 hover:bg-opacity-50">
+                <i data-feather="mic" class="w-4 h-4"></i><span>Musique</span>
+            </a>
+            <a href="forum.html" class="px-4 py-2 bg-dark-secondary bg-opacity-30 rounded-full flex items-center space-x-2 hover:bg-opacity-50">
+                <i data-feather="message-square" class="w-4 h-4"></i><span>Forum</span>
+            </a>
+        </div>
+
+        <!-- Create Post moved to floating button (FAB) bottom-left -->
+
+        <!-- Posts Feed (dynamic) -->
+        <div id="feed" class="mx-auto w-full max-w-3xl space-y-6">
+            <!-- Les posts seront injectés ici par posts.js -->
+        </div>
+
+        <!-- Modal minimal pour création de post (utilisé par posts.js s'il existe) -->
+        <div id="create-post-modal" class="hidden fixed inset-0 z-70 items-center justify-center bg-black bg-opacity-50 p-4">
+            <div class="bg-white dark:bg-dark-secondary rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-medium">Nouveau post</h3>
+                    <button id="close-create-post" class="text-gray-600">✕</button>
+                </div>
+                <textarea id="new-post" rows="4" class="w-full mb-2 p-3 border rounded bg-white text-black placeholder-gray-500 border-gray-200 dark:bg-dark-secondary dark:text-white dark:placeholder-gray-300 dark:border-gray-700 resize-none" placeholder="Quoi de neuf ?" inputmode="text" autocorrect="on" autocapitalize="sentences"></textarea>
+                
+                <!-- Champ de description d'image (affiché uniquement quand une image est sélectionnée) -->
+                <div id="image-description-container" class="hidden mb-2">
+                    <label for="image-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description de l'image (facultatif)</label>
+                    <textarea id="image-description" rows="2" class="w-full p-3 border rounded bg-white text-black placeholder-gray-500 border-gray-200 dark:bg-dark-secondary dark:text-white dark:placeholder-gray-300 dark:border-gray-700 resize-none" placeholder="Ajoutez une description à votre image..." inputmode="text" autocorrect="on" autocapitalize="sentences"></textarea>
+                </div>
+
+                <div id="selected-media-preview" class="hidden mb-2">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="text-sm text-gray-700 dark:text-gray-300">Fichier: <span id="media-filename"></span></div>
+                        <button id="remove-selected-media" class="text-sm text-red-400 hover:underline">Supprimer le fichier sélectionné</button>
+                    </div>
+                    <div id="selected-media-display" class="mt-2">
+                        <!-- Aperçu image avec format similaire aux posts -->
+                        <div id="preview-image-container" class="hidden relative w-full">
+                            <img id="preview-image" class="w-full rounded-2xl object-cover max-h-96" style="aspect-ratio: 16/9;" alt="aperçu image" />
+                            <div class="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                            <div class="absolute bottom-3 left-4 right-4 text-white">
+                                <div id="preview-title" class="text-xl font-extrabold drop-shadow-sm"></div>
+                                <div id="preview-description" class="text-sm opacity-90 mt-0.5 drop-shadow-sm"></div>
+                            </div>
+                        </div>
+                        <video id="preview-video" class="hidden w-full rounded" controls></video>
+                        <audio id="preview-audio" class="hidden w-full mt-2" controls></audio>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-2">
+                        <button data-media="photo" class="px-4 py-2 rounded bg-gray-100 dark:bg-dark-secondary dark:bg-opacity-30 dark:text-white hover:bg-gray-200 dark:hover:bg-opacity-50 transition-colors">📷 Photo</button>
+                        <button data-media="video" class="px-4 py-2 rounded bg-gray-100 dark:bg-dark-secondary dark:bg-opacity-30 dark:text-white hover:bg-gray-200 dark:hover:bg-opacity-50 transition-colors">🎥 Vidéo</button>
+                        <button data-media="audio" class="px-4 py-2 rounded bg-gray-100 dark:bg-dark-secondary dark:bg-opacity-30 dark:text-white hover:bg-gray-200 dark:hover:bg-opacity-50 transition-colors">🎵 Audio</button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="publish-post" class="px-4 py-1 rounded bg-dark-accent text-white">Publier</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Image lightbox -->
+        <div id="image-lightbox" class="hidden fixed inset-0 z-80 items-center justify-center bg-black bg-opacity-75 p-4 backdrop-blur-md">
+            <div class="relative w-full max-w-lg h-full flex flex-col justify-center items-center">
+                <button id="close-lightbox" class="absolute top-5 right-5 text-white z-50"><i data-feather="x"></i></button>
+                <div id="lightbox-content" class="w-full relative">
+                    <img id="lightbox-image" src="" alt="" class="w-full h-auto rounded-2xl shadow-lg object-contain max-h-[70vh]" />
+                    <div id="lightbox-info" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 rounded-b-2xl text-white">
+                        <h3 id="lightbox-title" class="text-2xl font-bold"></h3>
+                        <p id="lightbox-description" class="text-sm mt-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Action Button (bottom-left) to open create post modal -->
+            <div class="fab-container">
+                <button id="fab-create-post" title="Nouveau post" class="bg-gradient-to-br from-pink-500 to-orange-400 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center glass-card" aria-label="Nouveau post">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="fab-tooltip">Nouveau post</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vanta.js background (safe init)
+        try {
+            if (window.VANTA && window.THREE && typeof VANTA.GLOBE === 'function') {
+                VANTA.GLOBE({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0x3b82f6,
+                    backgroundColor: 0x0f172a,
+                    size: 0.8
+                });
+            }
+        } catch (e) { console.warn('Vanta init failed', e); }
+
+        // Le thème est géré globalement par global-theme.js; aucun bouton local nécessaire.
+
+        // Function to style post-related buttons according to theme
+        (function(){
+            function applyPostButtonTheme(isDark){
+                try {
+                    const modal = document.getElementById('create-post-modal');
+                    if (modal) {
+                        const mediaBtns = modal.querySelectorAll('button[data-media]');
+                        const publishBtn = document.getElementById('publish-post');
+
+                        mediaBtns.forEach(btn => {
+                            if (isDark) {
+                                btn.classList.remove('bg-gray-100','text-black');
+                                btn.classList.add('bg-dark-secondary','bg-opacity-30','text-white');
+                            } else {
+                                btn.classList.remove('bg-dark-secondary','bg-opacity-30','text-white');
+                                btn.classList.add('bg-gray-100','text-black');
+                            }
+                        });
+
+                        if (publishBtn) {
+                            if (isDark) {
+                                publishBtn.classList.remove('bg-blue-500','text-black');
+                                publishBtn.classList.add('bg-dark-accent','text-white');
+                            } else {
+                                publishBtn.classList.remove('bg-dark-accent','text-white');
+                                publishBtn.classList.add('bg-blue-500','text-white');
+                            }
+                        }
+                    }
+
+                    // Also style action buttons inside the feed (like, comment, share, follow)
+                    const feedActionBtns = document.querySelectorAll('#feed button[data-action]');
+                    feedActionBtns.forEach(btn => {
+                        if (isDark) {
+                            btn.classList.remove('hover:text-blue-400','hover:text-green-400','hover:text-red-400');
+                            btn.classList.add('text-gray-200');
+                        } else {
+                            btn.classList.remove('text-gray-200');
+                            // keep existing hover helpers for light theme
+                            btn.classList.add('hover:text-blue-400');
+                        }
+                    });
+
+                    // Style post menu buttons (three dots)
+                    const menuBtns = document.querySelectorAll('.post-menu-btn');
+                    menuBtns.forEach(b => {
+                        if (isDark) {
+                            b.classList.add('text-gray-300');
+                        } else {
+                            b.classList.remove('text-gray-300');
+                        }
+                    });
+
+                } catch(e){ console.warn('applyPostButtonTheme failed', e); }
+            }
+
+            // expose globally
+            window.applyPostButtonTheme = applyPostButtonTheme;
+        })();
+
+        // Initialize AOS and Feather after DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            try { AOS.init({ duration: 800, easing: 'ease-in-out', once: true }); } catch(e){}
+            try { if (window.feather) feather.replace(); } catch(e){}
+            // Apply post modal button theme according to current root class
+            try { if (window.applyPostButtonTheme) window.applyPostButtonTheme(document.documentElement.classList.contains('dark')); } catch(e){}
+        });
+    </script>
+
+    <!-- Supabase + app scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="auth-guard.js"></script>
+    <script src="auth.js"></script>
+    <script src="special-emails.js"></script>
+    <script src="posts.js"></script>
+    <script src="badge-injector.js"></script>
+
+    <script>
+        // After scripts are loaded, ensure Supabase client ready and init UI
+        (async function(){
+            try {
+                if (window.getSupabase) {
+                    await window.getSupabase();
+                }
+            } catch(e){ console.warn('Supabase init warning', e); }
+
+            // Init posts UI if available
+            try { if (window.echoesPosts && window.echoesPosts.initPostsUI) await window.echoesPosts.initPostsUI(); } catch(e){ console.warn('initPostsUI failed', e); }
+
+            // Wire simple auth UI if available
+            try { if (window.echoesAuth && window.echoesAuth.wireUI) window.echoesAuth.wireUI(); } catch(e){ console.warn('echoesAuth.wireUI failed', e); }
+        })();
+    </script>

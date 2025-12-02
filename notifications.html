@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - ECHOES</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="supabase-client.js"></script>
+    <script defer src="auth-guard.js"></script>
+    <script defer src="notifications.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .notification-item.is-read {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white">
+
+    <div class="container mx-auto px-4 pt-8 pb-24 max-w-2xl">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Notifications</h1>
+            <button id="mark-all-read-btn" class="text-sm text-blue-400 hover:underline">Tout marquer comme lu</button>
+        </header>
+
+        <div id="notifications-container" class="space-y-4">
+            <!-- Les notifications seront injectées ici -->
+            <p id="loading-state" class="text-center opacity-75">Chargement des notifications...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            feather.replace();
+            const container = document.getElementById('notifications-container');
+            const loadingState = document.getElementById('loading-state');
+
+            const notifications = await window.echoesNotifications.fetchNotifications();
+
+            if (loadingState) loadingState.remove();
+
+            if (notifications.length === 0) {
+                container.innerHTML = '<p class="text-center opacity-75">Aucune notification pour le moment.</p>';
+                return;
+            }
+
+            notifications.forEach(notif => {
+                const notifElement = createNotificationElement(notif);
+                container.appendChild(notifElement);
+            });
+
+            document.getElementById('mark-all-read-btn').addEventListener('click', async () => {
+                await window.echoesNotifications.markAllAsRead();
+                document.querySelectorAll('.notification-item').forEach(el => el.classList.add('is-read'));
+            });
+        });
+
+        function createNotificationElement(notification) {
+            const div = document.createElement('div');
+            div.className = `notification-item glass-card rounded-lg p-4 flex items-start gap-4 ${notification.is_read ? 'is-read' : ''}`;
+            div.dataset.id = notification.id;
+
+            let icon = '';
+            let content = '';
+
+            switch (notification.type) {
+                case 'badge':
+                    icon = `<img src="badges/${notification.data.badge_name}.svg" class="w-8 h-8">`;
+                    content = `Vous avez obtenu un nouveau badge : <strong>${notification.data.badge_name}</strong>.`;
+                    break;
+                case 'like':
+                    icon = `<img src="${notification.from_user.avatar_url}" class="w-8 h-8 rounded-full">`;
+                    content = `<strong>${notification.from_user.username}</strong> a aimé votre post.`;
+                    break;
+                case 'comment':
+                    icon = `<img src="${notification.from_user.avatar_url}" class="w-8 h-8 rounded-full">`;
+                    content = `<strong>${notification.from_user.username}</strong> a commenté votre post.`;
+                    break;
+                case 'follow':
+                    icon = `<img src="${notification.from_user.avatar_url}" class="w-8 h-8 rounded-full">`;
+                    content = `<strong>${notification.from_user.username}</strong> s'est abonné à vous.`;
+                    break;
+                default:
+                    icon = `<i data-feather="bell" class="w-8 h-8"></i>`;
+                    content = 'Nouvelle notification.';
+            }
+
+            div.innerHTML = `
+                <div class="flex-shrink-0">${icon}</div>
+                <div>
+                    <p>${content}</p>
+                    <p class="text-xs opacity-60 mt-1">${new Date(notification.created_at).toLocaleString('fr-FR')}</p>
+                </div>
+            `;
+
+            feather.replace();
+
+            div.addEventListener('click', async () => {
+                if (!div.classList.contains('is-read')) {
+                    await window.echoesNotifications.markAsRead(notification.id);
+                    div.classList.add('is-read');
+                }
+            });
+
+            return div;
+        }
+    </script>
+
+</body>
+</html>

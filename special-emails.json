@@ -1,0 +1,15 @@
+{
+  "specialEmails": [
+    {
+      "email": "gibmad932@gmail.com",
+      "badge": "vérifié",
+      "points": 3000,
+      "description": "Utilisateur spécial avec badge Vérifié"
+    }
+  ],
+  "metadata": {
+    "description": "Liste des emails spéciaux qui reçoivent automatiquement des badges et points",
+    "lastUpdated": "2025-11-30",
+    "version": "1.0"
+  }
+}
